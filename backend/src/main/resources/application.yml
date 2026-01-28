@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: voice-enabled-task-manager
+  datasource:
+    url: jdbc:mysql://localhost:3306/task_manager?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      indent-output: true
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  error:
+    include-message: always
+    include-binding-errors: always
+
+app:
+  jwt:
+    secret-key: "your-256-bit-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm-here"
+    expiration: 86400000
+  google:
+    calendar:
+      credentials-path: /credentials/credentials.json
+      token-directory-path: /tokens
+
+logging:
+  level:
+    root: INFO
+    com.taskmanager: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log

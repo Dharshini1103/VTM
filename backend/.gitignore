@@ -1,0 +1,35 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.m2/
+dependency-reduced-pom.xml
+
+# Gradle
+.gradle/
+
+# Environment
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+
+# Node (for any frontend in same repo)
+node_modules/
+npm-debug.log
+yarn-error.log
