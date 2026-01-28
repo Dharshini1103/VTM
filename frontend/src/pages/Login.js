@@ -24,6 +24,10 @@ function Login() {
     }
   }, [form, rememberMe, savedEmail, savedPassword]);
 
+  const fetchTask = async () => {
+    // This function can be used for future task fetching
+  };
+
   const onFinish = async (values) => {
     try {
       const response = await authApi.login(values.email, values.password);
@@ -103,7 +107,7 @@ function Login() {
 
               <div style={{ textAlign: 'center' }}>
                 <p>
-                  Don't have an account? <a onClick={() => navigate('/register')}>Register here</a>
+                  Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/register'); }}>Register here</a>
                 </p>
               </div>
             </Spin>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Layout, Menu, Avatar, Dropdown, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import { LogoutOutlined, UserOutlined, TeamOutlined, FileTextOutlined, AudioOutlined } from '@ant-design/icons';
 import { logout } from '../slices/authSlice';
 

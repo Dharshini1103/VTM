@@ -4,6 +4,7 @@ import com.taskmanager.entity.Task;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.taskmanager.config.LocalDateDeserializer;
+import com.taskmanager.config.LocalDateTimeDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

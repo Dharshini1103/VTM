@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, List, Tag, Empty, Spin, Space, Button } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, AlertOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { Row, Col, Card, Statistic, List, Tag, Empty, Spin, Space, Button, Modal } from 'antd';
+import { CheckCircleOutlined, ClockCircleOutlined, AlertOutlined, FileTextOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import taskApi from '../api/taskApi';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -69,6 +71,30 @@ function Dashboard() {
     }
   };
 
+  const handleDelete = (taskId) => {
+    Modal.confirm({
+      title: 'Delete Task',
+      content: 'Are you sure you want to delete this task?',
+      okText: 'Delete',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await taskApi.deleteTask(taskId);
+          setTasks(tasks.filter(t => t.id !== taskId));
+          // Update stats after deletion
+          setStats(prev => ({
+            ...prev,
+            total: prev.total - 1,
+            completed: tasks.find(t => t.id === taskId)?.status === 'COMPLETED' ? prev.completed - 1 : prev.completed,
+            inProgress: tasks.find(t => t.id === taskId)?.status === 'IN_PROGRESS' ? prev.inProgress - 1 : prev.inProgress,
+          }));
+        } catch (error) {
+          console.error('Error deleting task:', error);
+        }
+      },
+    });
+  };
+
   return (
     <div>
       <h1 style={{ marginBottom: '30px' }}>Dashboard</h1>
@@ -128,6 +154,24 @@ function Dashboard() {
                     padding: '12px 0',
                     borderBottom: '1px solid #f0f0f0',
                   }}
+                  actions={[
+                    <Button
+                      key="update"
+                      type="primary"
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => navigate(`/tasks/${task.id}/edit`)}
+                      title="Update Task"
+                    />,
+                    <Button
+                      key="delete"
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDelete(task.id)}
+                      title="Delete Task"
+                    />,
+                  ]}
                 >
                   <List.Item.Meta
                     avatar={getStatusIcon(task.status)}

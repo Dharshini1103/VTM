@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Button, Space, Tag, Modal, Input, Select, Row, Col, Card, Spin, Empty } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import taskApi from '../api/taskApi';
 
 function Tasks() {
@@ -11,9 +11,20 @@ function Tasks() {
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState(null);
   const [filterPriority, setFilterPriority] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     fetchTasks();
+  }, [refreshTrigger]);
+
+  // Listen for navigation events to refresh data when returning from edit page
+  useEffect(() => {
+    const handleFocus = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const fetchTasks = async () => {
@@ -108,20 +119,29 @@ function Tasks() {
     {
       title: 'Actions',
       key: 'actions',
-      width: '13%',
+      width: '20%',
       render: (_, record) => (
         <Space>
+          <Button
+            type="default"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/tasks/${record.id}`)}
+            title="View Task"
+          />
           <Button
             type="primary"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => navigate(`/tasks/${record.id}`)}
+            onClick={() => navigate(`/tasks/${record.id}/edit`)}
+            title="Update Task"
           />
           <Button
             danger
             size="small"
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
+            title="Delete Task"
           />
         </Space>
       ),
