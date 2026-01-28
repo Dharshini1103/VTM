@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import TaskDetail from './pages/TaskDetail';
 import CreateTask from './pages/CreateTask';
+import EditTask from './pages/EditTask';
 import VoiceInput from './pages/VoiceInput';
 import TeamMembers from './pages/TeamMembers';
 import Profile from './pages/Profile';
@@ -63,6 +64,14 @@ function App() {
             element={
               <PrivateRoute>
                 <TaskDetail />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tasks/:taskId/edit"
+            element={
+              <PrivateRoute>
+                <EditTask />
               </PrivateRoute>
             }
           />

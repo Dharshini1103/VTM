@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Space, Tag, Modal, Input, Select, Row, Col, Card, Spin, Empty } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Modal, Input, Select, Row, Col, Card, Spin, Empty, Alert } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined, AudioOutlined, StopOutlined } from '@ant-design/icons';
 import taskApi from '../api/taskApi';
+import voiceApi from '../api/voiceApi';
 
 function Tasks() {
   const navigate = useNavigate();
@@ -12,6 +13,14 @@ function Tasks() {
   const [filterStatus, setFilterStatus] = useState(null);
   const [filterPriority, setFilterPriority] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  // Voice input local state
+  const [viLoading, setViLoading] = useState(false);
+  const [viError, setViError] = useState(null);
+  const [manualVoiceText, setManualVoiceText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunksRef = useRef([]);
 
   useEffect(() => {
     fetchTasks();
@@ -62,6 +71,67 @@ function Tasks() {
     const matchesPriority = !filterPriority || task.priority === filterPriority;
     return matchesSearch && matchesStatus && matchesPriority;
   });
+
+  // Voice helpers
+  const startRecording = async () => {
+    try {
+      setViError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mr.onstop = async () => {
+        try {
+          const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64Audio = reader.result.split(',')[1];
+            await processVoice(base64Audio);
+          };
+          reader.readAsDataURL(audioBlob);
+        } finally {
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+          }
+        }
+      };
+      mr.start();
+      setIsRecording(true);
+    } catch (e) {
+      setViError('Microphone access denied: ' + e.message);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const processVoice = async (audioBase64) => {
+    try {
+      setViLoading(true);
+      setViError(null);
+      await voiceApi.processVoiceCommand({ text: manualVoiceText || 'Voice input', audioBase64 });
+      setManualVoiceText('');
+      await fetchTasks();
+    } catch (e) {
+      setViError(e.response?.data?.error || e.message || 'Error processing voice');
+    } finally {
+      setViLoading(false);
+    }
+  };
+
+  const submitManualVoice = async () => {
+    if (!manualVoiceText.trim()) {
+      setViError('Please enter a command');
+      return;
+    }
+    await processVoice('');
+  };
 
   const columns = [
     {
@@ -168,7 +238,7 @@ function Tasks() {
 
       <Card style={{ marginBottom: '20px' }}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Input
               placeholder="Search tasks..."
               prefix={<SearchOutlined />}
@@ -176,7 +246,7 @@ function Tasks() {
               onChange={(e) => setSearchText(e.target.value)}
             />
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Select
               placeholder="Filter by Status"
               allowClear
@@ -189,7 +259,7 @@ function Tasks() {
               ]}
             />
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Select
               placeholder="Filter by Priority"
               allowClear
@@ -202,6 +272,28 @@ function Tasks() {
                 { label: 'Urgent', value: 'URGENT' },
               ]}
             />
+          </Col>
+          <Col xs={24} sm={24} md={6}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {!isRecording ? (
+                <Button icon={<AudioOutlined />} onClick={startRecording} loading={viLoading}>
+                  Voice
+                </Button>
+              ) : (
+                <Button danger icon={<StopOutlined />} onClick={stopRecording}>
+                  Stop
+                </Button>
+              )}
+              <Input
+                placeholder="e.g., Assign task 42 to John"
+                value={manualVoiceText}
+                onChange={(e) => setManualVoiceText(e.target.value)}
+              />
+              <Button type="primary" onClick={submitManualVoice} loading={viLoading}>
+                Go
+              </Button>
+            </div>
+            {viError && <Alert type="error" showIcon style={{ marginTop: 8 }} message={viError} />}
           </Col>
         </Row>
       </Card>
