@@ -236,8 +236,8 @@ function TeamMembers() {
               icon={<EditOutlined />}
               size="small"
               onClick={() => handleUpdate(record)}
-              disabled={isCurrentUser}
-              title={isCurrentUser ? "Cannot edit current user" : "Edit user"}
+              disabled={!isCurrentUser}
+              title={!isCurrentUser ? "Cannot edit other users" : "Edit your profile"}
             >
               Update
             </Button>
@@ -247,14 +247,14 @@ function TeamMembers() {
               onConfirm={() => handleDelete(record.id)}
               okText="Yes"
               cancelText="No"
-              disabled={isCurrentUser}
+              disabled={!isCurrentUser}
             >
               <Button
                 danger
                 icon={<DeleteOutlined />}
                 size="small"
-                disabled={isCurrentUser}
-                title={isCurrentUser ? "Cannot delete current user" : "Deactivate user"}
+                disabled={!isCurrentUser}
+                title={!isCurrentUser ? "Cannot delete other users" : "Deactivate your account"}
               >
                 Delete
               </Button>

@@ -12,7 +12,7 @@ function Dashboard() {
     total: 0,
     completed: 0,
     inProgress: 0,
-    toDo: 0,
+    pending: 0,
   });
 
   useEffect(() => {
@@ -32,18 +32,18 @@ function Dashboard() {
 
       setTasks(allTasks);
       
-      const completed = allTasks.filter(t => t.status === 'DONE').length;
-      const inProgress = allTasks.filter(t => t.status === 'DOING').length;
-      const toDo = allTasks.filter(t => t.status === 'TO_DO').length;
+      const completed = allTasks.filter(t => t.status === 'DONE' || t.status === 'Completed' || t.status === 'COMPLETED').length;
+      const inProgress = allTasks.filter(t => t.status === 'DOING' || t.status === 'In Progress' || t.status === 'IN PROGRESS' || t.status === 'IN_PROGRESS').length;
+      const pending = allTasks.filter(t => t.status === 'TO_DO' || t.status === 'Pending' || t.status === 'To Do' || t.status === 'PENDING').length;
       
       setStats({
         total: allTasks.length,
         completed: completed,
         inProgress: inProgress,
-        toDo: toDo,
+        pending: pending,
       });
       
-      console.log('Stats:', { total: allTasks.length, completed, inProgress, toDo });
+      console.log('Stats:', { total: allTasks.length, completed, inProgress, pending });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       console.error('Error details:', error.response?.data);
@@ -69,10 +69,14 @@ function Dashboard() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'DONE':
+      case 'COMPLETED':
         return <CheckCircleOutlined style={{ color: 'green' }} />;
       case 'DOING':
+      case 'IN PROGRESS':
+      case 'IN_PROGRESS':
         return <ClockCircleOutlined style={{ color: 'blue' }} />;
       case 'TO_DO':
+      case 'PENDING':
         return <AlertOutlined style={{ color: 'orange' }} />;
       default:
         return <FileTextOutlined />;
@@ -82,11 +86,15 @@ function Dashboard() {
   const getStatusText = (status) => {
     switch (status) {
       case 'DONE':
+      case 'COMPLETED':
         return 'Completed';
       case 'DOING':
+      case 'IN PROGRESS':
+      case 'IN_PROGRESS':
         return 'In Progress';
       case 'TO_DO':
-        return 'To Do';
+      case 'PENDING':
+        return 'Pending';
       default:
         return status;
     }
@@ -95,10 +103,14 @@ function Dashboard() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'DONE':
+      case 'COMPLETED':
         return 'green';
       case 'DOING':
+      case 'IN PROGRESS':
+      case 'IN_PROGRESS':
         return 'blue';
       case 'TO_DO':
+      case 'PENDING':
         return 'orange';
       default:
         return 'default';
@@ -119,8 +131,9 @@ function Dashboard() {
           setStats(prev => ({
             ...prev,
             total: prev.total - 1,
-            completed: tasks.find(t => t.id === taskId)?.status === 'DONE' ? prev.completed - 1 : prev.completed,
-            inProgress: tasks.find(t => t.id === taskId)?.status === 'DOING' ? prev.inProgress - 1 : prev.inProgress,
+            completed: (tasks.find(t => t.id === taskId)?.status === 'DONE' || tasks.find(t => t.id === taskId)?.status === 'COMPLETED') ? prev.completed - 1 : prev.completed,
+            inProgress: (tasks.find(t => t.id === taskId)?.status === 'DOING' || tasks.find(t => t.id === taskId)?.status === 'IN PROGRESS' || tasks.find(t => t.id === taskId)?.status === 'IN_PROGRESS') ? prev.inProgress - 1 : prev.inProgress,
+            pending: (tasks.find(t => t.id === taskId)?.status === 'TO_DO' || tasks.find(t => t.id === taskId)?.status === 'PENDING') ? prev.pending - 1 : prev.pending,
           }));
         } catch (error) {
           console.error('Error deleting task:', error);
@@ -167,8 +180,8 @@ function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="To Do"
-                value={stats.toDo}
+                title="Pending"
+                value={stats.pending}
                 prefix={<AlertOutlined />}
                 valueStyle={{ color: '#fa8c16' }}
               />
