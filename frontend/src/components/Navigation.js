@@ -48,7 +48,12 @@ function Navigation() {
         theme="dark"
         mode="horizontal"
         defaultSelectedKeys={['dashboard']}
-        style={{ flex: 1, minWidth: 0 }}
+        style={{ 
+          flex: 1, 
+          minWidth: 0,
+          backgroundColor: 'transparent',
+        }}
+        className="custom-menu"
       >
         <Menu.Item key="dashboard" onClick={() => navigate('/')}>
           Dashboard

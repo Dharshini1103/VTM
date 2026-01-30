@@ -64,3 +64,19 @@ a:hover {
 .btn-danger:hover {
   background-color: #ff7875;
 }
+
+/* Custom menu styles to remove blue background */
+.custom-menu .ant-menu-item-selected {
+  background-color: transparent !important;
+  color: #fff !important;
+}
+
+.custom-menu .ant-menu-item:hover {
+  background-color: transparent !important;
+  color: #fff !important;
+}
+
+.custom-menu .ant-menu-item-active {
+  background-color: transparent !important;
+  color: #fff !important;
+}
