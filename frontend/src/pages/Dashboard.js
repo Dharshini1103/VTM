@@ -12,7 +12,7 @@ function Dashboard() {
     total: 0,
     completed: 0,
     inProgress: 0,
-    overdue: 0,
+    toDo: 0,
   });
 
   useEffect(() => {
@@ -22,23 +22,31 @@ function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [tasksRes, overdueRes] = await Promise.all([
-        taskApi.getUserTasks(),
-        taskApi.getOverdueTasks(),
-      ]);
-
-      const allTasks = tasksRes.data.data || [];
-      const overdueTasks = overdueRes.data.data || [];
+      console.log('Fetching dashboard data...');
+      
+      const tasksRes = await taskApi.getUserTasks();
+      console.log('Tasks response:', tasksRes);
+      
+      const allTasks = tasksRes.data?.data || [];
+      console.log('All tasks:', allTasks);
 
       setTasks(allTasks);
+      
+      const completed = allTasks.filter(t => t.status === 'DONE').length;
+      const inProgress = allTasks.filter(t => t.status === 'DOING').length;
+      const toDo = allTasks.filter(t => t.status === 'TO_DO').length;
+      
       setStats({
         total: allTasks.length,
-        completed: allTasks.filter(t => t.status === 'COMPLETED').length,
-        inProgress: allTasks.filter(t => t.status === 'IN_PROGRESS').length,
-        overdue: overdueTasks.length,
+        completed: completed,
+        inProgress: inProgress,
+        toDo: toDo,
       });
+      
+      console.log('Stats:', { total: allTasks.length, completed, inProgress, toDo });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      console.error('Error details:', error.response?.data);
     } finally {
       setLoading(false);
     }
@@ -60,14 +68,40 @@ function Dashboard() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'COMPLETED':
+      case 'DONE':
         return <CheckCircleOutlined style={{ color: 'green' }} />;
-      case 'IN_PROGRESS':
+      case 'DOING':
         return <ClockCircleOutlined style={{ color: 'blue' }} />;
-      case 'PENDING':
+      case 'TO_DO':
         return <AlertOutlined style={{ color: 'orange' }} />;
       default:
         return <FileTextOutlined />;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'DONE':
+        return 'Completed';
+      case 'DOING':
+        return 'In Progress';
+      case 'TO_DO':
+        return 'To Do';
+      default:
+        return status;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'DONE':
+        return 'green';
+      case 'DOING':
+        return 'blue';
+      case 'TO_DO':
+        return 'orange';
+      default:
+        return 'default';
     }
   };
 
@@ -85,8 +119,8 @@ function Dashboard() {
           setStats(prev => ({
             ...prev,
             total: prev.total - 1,
-            completed: tasks.find(t => t.id === taskId)?.status === 'COMPLETED' ? prev.completed - 1 : prev.completed,
-            inProgress: tasks.find(t => t.id === taskId)?.status === 'IN_PROGRESS' ? prev.inProgress - 1 : prev.inProgress,
+            completed: tasks.find(t => t.id === taskId)?.status === 'DONE' ? prev.completed - 1 : prev.completed,
+            inProgress: tasks.find(t => t.id === taskId)?.status === 'DOING' ? prev.inProgress - 1 : prev.inProgress,
           }));
         } catch (error) {
           console.error('Error deleting task:', error);
@@ -133,21 +167,21 @@ function Dashboard() {
           <Col xs={24} sm={12} lg={6}>
             <Card>
               <Statistic
-                title="Overdue"
-                value={stats.overdue}
+                title="To Do"
+                value={stats.toDo}
                 prefix={<AlertOutlined />}
-                valueStyle={{ color: '#ff4d4f' }}
+                valueStyle={{ color: '#fa8c16' }}
               />
             </Card>
           </Col>
         </Row>
 
-        <Card title="Recent Tasks" style={{ marginBottom: '30px' }}>
+        <Card title="All Tasks" style={{ marginBottom: '30px' }}>
           {tasks.length === 0 ? (
             <Empty description="No tasks found" />
           ) : (
             <List
-              dataSource={tasks.slice(0, 5)}
+              dataSource={tasks}
               renderItem={(task) => (
                 <List.Item
                   style={{
@@ -179,9 +213,10 @@ function Dashboard() {
                       <Space>
                         {task.title}
                         <Tag color={getPriorityColor(task.priority)}>{task.priority}</Tag>
+                        <Tag color={getStatusColor(task.status)}>{getStatusText(task.status)}</Tag>
                       </Space>
                     }
-                    description={`Assigned to: ${task.assignedToName || 'Unassigned'}`}
+                    description={`Assigned to: ${task.assignedToName || 'Unassigned'} ${task.deadline ? `• Deadline: ${new Date(task.deadline).toLocaleDateString()}` : ''}`}
                   />
                 </List.Item>
               )}

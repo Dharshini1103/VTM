@@ -46,18 +46,17 @@ public class TaskService {
             throw new BadRequestException("Deadline must be in the future");
         }
 
-        Task task = Task.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .priority(request.getPriority())
-                .status(Task.TaskStatus.PENDING)
-                .deadline(request.getDeadline())
-                .createdBy(creator)
-                .assignedTo(assignee)
-                .callScheduled(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+        Task task = new Task();
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+        task.setPriority(request.getPriority());
+        task.setStatus(request.getStatus() != null ? request.getStatus() : Task.TaskStatus.PENDING);
+        task.setDeadline(request.getDeadline());
+        task.setCreatedBy(creator);
+        task.setAssignedTo(assignee);
+        task.setCallScheduled(false);
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUpdatedAt(LocalDateTime.now());
 
         Task savedTask = taskRepository.save(task);
         logger.info("Task created successfully with ID: {}", savedTask.getId());

@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.taskmanager.config.LocalDateDeserializer;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 import java.time.LocalDate;
 
-@Data
 public class UpdateTaskRequest {
     
     @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
@@ -26,4 +24,23 @@ public class UpdateTaskRequest {
     private LocalDate deadline;
     
     private Long assignedToId;
+    
+    // Getters and setters
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public Task.TaskPriority getPriority() { return priority; }
+    public void setPriority(Task.TaskPriority priority) { this.priority = priority; }
+    
+    public Task.TaskStatus getStatus() { return status; }
+    public void setStatus(Task.TaskStatus status) { this.status = status; }
+    
+    public LocalDate getDeadline() { return deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public Long getAssignedToId() { return assignedToId; }
+    public void setAssignedToId(Long assignedToId) { this.assignedToId = assignedToId; }
 }

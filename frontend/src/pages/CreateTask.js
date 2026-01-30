@@ -33,6 +33,7 @@ function CreateTask() {
         title: values.title,
         description: values.description,
         priority: values.priority,
+        status: values.status,
         deadline: values.deadline.format('YYYY-MM-DD'),
         assignedToId: values.assignedToId,
       };
@@ -89,6 +90,19 @@ function CreateTask() {
                     <Select.Option value="MEDIUM">Medium</Select.Option>
                     <Select.Option value="HIGH">High</Select.Option>
                     <Select.Option value="URGENT">Urgent</Select.Option>
+                  </Select>
+                </Form.Item>
+
+                <Form.Item
+                  label="Status"
+                  name="status"
+                  initialValue="PENDING"
+                  rules={[{ required: true, message: 'Please select status' }]}
+                >
+                  <Select placeholder="Select status">
+                    <Select.Option value="PENDING">Pending</Select.Option>
+                    <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                    <Select.Option value="COMPLETED">Completed</Select.Option>
                   </Select>
                 </Form.Item>
 

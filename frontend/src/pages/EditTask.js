@@ -22,17 +22,33 @@ function EditTask() {
           taskApi.getTaskById(taskId),
           userApi.getAllTeamMembers(),
         ]);
-        const task = taskRes.data.data;
-        setUsers(usersRes.data.data || []);
+        console.log('Task response:', taskRes);
+        console.log('Users response:', usersRes);
+        
+        const task = taskRes.data?.data;
+        const users = usersRes.data?.data || [];
+        
+        console.log('Task data:', task);
+        console.log('Users data:', users);
+        
+        if (!task) {
+          setError('Task not found');
+          return;
+        }
+        
+        setUsers(users);
         form.setFieldsValue({
           title: task.title,
           description: task.description,
           priority: task.priority,
+          status: task.status,
           assignedToId: task.assignedToId,
           deadline: task.deadline ? dayjs(task.deadline) : null,
         });
       } catch (err) {
-        setError(err.response?.data?.error || 'Error loading task');
+        console.error('Error loading task:', err);
+        console.error('Error details:', err.response?.data);
+        setError(err.response?.data?.message || err.response?.data?.error || 'Error loading task');
       } finally {
         setLoading(false);
       }
@@ -48,13 +64,16 @@ function EditTask() {
         title: values.title,
         description: values.description,
         priority: values.priority,
+        status: values.status,
         assignedToId: values.assignedToId,
         deadline: values.deadline ? values.deadline.format('YYYY-MM-DD') : null,
       };
       await taskApi.updateTask(taskId, payload);
       navigate(`/tasks/${taskId}`);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error updating task');
+      console.error('Error updating task:', err);
+      console.error('Error details:', err.response?.data);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Error updating task');
     } finally {
       setSubmitting(false);
     }
@@ -78,13 +97,21 @@ function EditTask() {
                   <Input.TextArea rows={4} placeholder="Enter task description" />
                 </Form.Item>
 
-                <Form.Item label="Priority" name="priority" rules={[{ required: true, message: 'Please select priority' }]}>
-                  <Select placeholder="Select priority">
-                    <Select.Option value="LOW">Low</Select.Option>
-                    <Select.Option value="MEDIUM">Medium</Select.Option>
-                    <Select.Option value="HIGH">High</Select.Option>
-                    <Select.Option value="URGENT">Urgent</Select.Option>
-                  </Select>
+                <Form.Item label="Priority" name="priority" rules={[{ required: true, message: 'Please select priority' }]}> 
+                <Select placeholder="Select priority">
+                <Select.Option value="LOW">Low</Select.Option>
+                <Select.Option value="MEDIUM">Medium</Select.Option>
+                <Select.Option value="HIGH">High</Select.Option>
+                <Select.Option value="URGENT">Urgent</Select.Option>
+                </Select>
+                </Form.Item>
+                
+                <Form.Item label="Status" name="status" rules={[{ required: true, message: 'Please select status' }]}>
+                <Select placeholder="Select status">
+                <Select.Option value="PENDING">Pending</Select.Option>
+                <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                <Select.Option value="COMPLETED">Completed</Select.Option>
+                </Select>
                 </Form.Item>
 
                 <Form.Item label="Assign To" name="assignedToId" rules={[{ required: true, message: 'Please select a team member' }]}>

@@ -25,18 +25,18 @@ public class UserDTO {
     private LocalDateTime updatedAt;
 
     public static UserDTO fromEntity(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .gmailId(user.getGmailId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .profilePhoto(user.getProfilePhoto())
-                .isActive(user.getIsActive())
-                .role(user.getRole())
-                .calendarSynced(user.getCalendarSynced())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
+        return new UserDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getGmailId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getProfilePhoto(),
+                user.getIsActive(),
+                user.getRole(),
+                user.getCalendarSynced(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
     }
 }

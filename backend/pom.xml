@@ -76,6 +76,15 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Lombok -->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.30</version>
+    <scope>provided</scope>
+</dependency>
+
+
         <!-- MySQL Driver -->
         <dependency>
             <groupId>mysql</groupId>
@@ -103,13 +112,6 @@
             <artifactId>google-http-client-jackson2</artifactId>
             <version>1.43.3</version>
         </dependency -->
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- Apache Commons Lang -->
         <dependency>

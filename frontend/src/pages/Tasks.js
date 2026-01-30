@@ -165,10 +165,9 @@ function Tasks() {
       width: '15%',
       render: (status) => {
         const colors = {
-          PENDING: 'processing',
+          PENDING: 'warning',
           IN_PROGRESS: 'processing',
           COMPLETED: 'success',
-          CANCELLED: 'error',
         };
         return <Tag color={colors[status] || 'default'}>{status}</Tag>;
       },

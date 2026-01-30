@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.taskmanager.config.LocalDateDeserializer;
 import jakarta.validation.constraints.*;
-import lombok.Data;
 import java.time.LocalDate;
 
-@Data
 public class CreateTaskRequest {
     
     @NotBlank(message = "Title is required")
@@ -20,6 +18,8 @@ public class CreateTaskRequest {
     
     @NotNull(message = "Priority is required")
     private Task.TaskPriority priority;
+
+    private Task.TaskStatus status; // optional on create, defaults to TO_DO if not provided
     
     @NotNull(message = "Deadline is required")
     @FutureOrPresent(message = "Deadline must be in the future or present")
@@ -30,4 +30,23 @@ public class CreateTaskRequest {
     @NotNull(message = "Assignee ID is required")
     @Positive(message = "Assignee ID must be positive")
     private Long assignedToId;
+    
+    // Getters and setters
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public Task.TaskPriority getPriority() { return priority; }
+    public void setPriority(Task.TaskPriority priority) { this.priority = priority; }
+    
+    public Task.TaskStatus getStatus() { return status; }
+    public void setStatus(Task.TaskStatus status) { this.status = status; }
+    
+    public LocalDate getDeadline() { return deadline; }
+    public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public Long getAssignedToId() { return assignedToId; }
+    public void setAssignedToId(Long assignedToId) { this.assignedToId = assignedToId; }
 }

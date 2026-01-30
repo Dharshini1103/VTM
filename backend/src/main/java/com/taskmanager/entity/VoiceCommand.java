@@ -1,10 +1,8 @@
 package com.taskmanager.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -42,12 +40,12 @@ public class VoiceCommand {
     @Column(columnDefinition = "TEXT")
     private String metadata;
 
-    @Column(name = "processed_successfully")
     @Builder.Default
+    @Column(name = "processed_successfully")
     private Boolean processedSuccessfully = false;
 
-    @Column(nullable = false)
     @Builder.Default
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum CommandIntent {

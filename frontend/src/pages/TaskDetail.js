@@ -43,7 +43,7 @@ function TaskDetail() {
   const handleComplete = async () => {
     Modal.confirm({
       title: 'Complete Task',
-      content: 'Mark this task as completed?',
+      content: 'Mark this task as done?',
       onOk: async () => {
         try {
           const response = await taskApi.completeTask(taskId);
@@ -122,12 +122,12 @@ function TaskDetail() {
               <Space>
                 <Button icon={<AudioOutlined />} onClick={() => navigate('/voice')} />
                 <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  onClick={handleComplete}
-                  disabled={task.status === 'COMPLETED'}
+                type="primary"
+                icon={<CheckOutlined />}
+                onClick={handleComplete}
+                disabled={task.status === 'COMPLETED'}
                 >
-                  Complete
+                Complete
                 </Button>
                 <Button icon={<EditOutlined />} onClick={() => navigate(`/tasks/${taskId}/edit`)} />
                 <Button danger icon={<DeleteOutlined />} onClick={handleDelete} />
