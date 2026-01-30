@@ -25,6 +25,12 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Team members retrieved", users));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAllUsers() {
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(ApiResponse.success("All users retrieved", users));
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserDTO>> getUserById(@PathVariable Long userId) {
         UserDTO user = userService.getUserById(userId);
@@ -33,9 +39,9 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser() {
-        // For now, we'll return user with ID 1 as current user
+        // For now, we'll return user with ID 3 as current user
         // This should be updated to get actual user from security context
-        UserDTO user = userService.getUserById(1L);
+        UserDTO user = userService.getUserById(3L);
         return ResponseEntity.ok(ApiResponse.success("Current user retrieved", user));
     }
 

@@ -94,6 +94,13 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(UserDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     public UserDTO updateUser(Long userId, UserDTO updateRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -104,11 +111,17 @@ public class UserService {
         if (updateRequest.getLastName() != null) {
             user.setLastName(updateRequest.getLastName());
         }
+        if (updateRequest.getEmail() != null) {
+            user.setEmail(updateRequest.getEmail());
+        }
         if (updateRequest.getProfilePhoto() != null) {
             user.setProfilePhoto(updateRequest.getProfilePhoto());
         }
         if (updateRequest.getRole() != null) {
             user.setRole(updateRequest.getRole());
+        }
+        if (updateRequest.getIsActive() != null) {
+            user.setIsActive(updateRequest.getIsActive());
         }
 
         User updatedUser = userRepository.save(user);

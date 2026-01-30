@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Empty, Spin, Row, Col, Statistic, Avatar, Tag, Space } from 'antd';
-import { UserOutlined, TeamOutlined, MailOutlined, CheckCircleOutlined, CloseCircleOutlined, CrownOutlined } from '@ant-design/icons';
+import { Table, Card, Empty, Spin, Row, Col, Statistic, Avatar, Tag, Space, Button, Modal, Form, Input, Select, message, Popconfirm } from 'antd';
+import { UserOutlined, TeamOutlined, MailOutlined, CheckCircleOutlined, CloseCircleOutlined, CrownOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import userApi from '../api/userApi';
 import { useSelector } from 'react-redux';
 
 function TeamMembers() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [updateForm] = Form.useForm();
   const currentUser = useSelector(state => state.auth.user);
 
   useEffect(() => {
@@ -23,7 +26,7 @@ function TeamMembers() {
       console.log('Fetching team members...');
       console.log('Current user from Redux:', currentUser);
       
-      const response = await userApi.getAllTeamMembers();
+      const response = await userApi.getAllUsers();
       console.log('Team members response:', response);
       const members = response.data?.data || [];
       console.log('Team members:', members);
@@ -42,6 +45,47 @@ function TeamMembers() {
     } catch (error) {
       console.error('Error fetching team members:', error);
       console.error('Error details:', error.response?.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = (member) => {
+    setSelectedMember(member);
+    updateForm.setFieldsValue({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      role: member.role,
+      isActive: member.isActive
+    });
+    setUpdateModalVisible(true);
+  };
+
+  const handleUpdateSubmit = async (values) => {
+    try {
+      setLoading(true);
+      await userApi.updateUser(selectedMember.id, values);
+      message.success('User updated successfully');
+      setUpdateModalVisible(false);
+      fetchTeamMembers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      message.error('Failed to update user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (memberId) => {
+    try {
+      setLoading(true);
+      await userApi.deactivateUser(memberId);
+      message.success('User deactivated successfully');
+      fetchTeamMembers();
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      message.error('Failed to deactivate user');
     } finally {
       setLoading(false);
     }
@@ -175,6 +219,51 @@ function TeamMembers() {
       ),
       width: '15%',
     },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => {
+        const isCurrentUser = currentUser && (
+          record.id === currentUser.id || 
+          record.email === currentUser.email ||
+          (record.gmailId && record.gmailId === currentUser.email)
+        );
+        
+        return (
+          <Space>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => handleUpdate(record)}
+              disabled={isCurrentUser}
+              title={isCurrentUser ? "Cannot edit current user" : "Edit user"}
+            >
+              Update
+            </Button>
+            <Popconfirm
+              title="Are you sure you want to deactivate this user?"
+              description="This action will deactivate the user account."
+              onConfirm={() => handleDelete(record.id)}
+              okText="Yes"
+              cancelText="No"
+              disabled={isCurrentUser}
+            >
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                size="small"
+                disabled={isCurrentUser}
+                title={isCurrentUser ? "Cannot delete current user" : "Deactivate user"}
+              >
+                Delete
+              </Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
+      width: '20%',
+    },
   ];
 
   const activeMembers = members.filter(m => m.isActive).length;
@@ -253,6 +342,92 @@ function TeamMembers() {
           )}
         </Spin>
       </Card>
+
+      {/* Update User Modal */}
+      <Modal
+        title={`Update User: ${selectedMember?.firstName} ${selectedMember?.lastName}`}
+        open={updateModalVisible}
+        onCancel={() => setUpdateModalVisible(false)}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={updateForm}
+          layout="vertical"
+          onFinish={handleUpdateSubmit}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="First Name"
+                name="firstName"
+                rules={[{ required: true, message: 'Please input first name!' }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Last Name"
+                name="lastName"
+                rules={[{ required: true, message: 'Please input last name!' }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: 'Please input email!' },
+              { type: 'email', message: 'Please enter a valid email!' }
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Role"
+                name="role"
+                rules={[{ required: true, message: 'Please select a role!' }]}
+              >
+                <Select>
+                  <Select.Option value="USER">USER</Select.Option>
+                  <Select.Option value="MANAGER">MANAGER</Select.Option>
+                  <Select.Option value="ADMIN">ADMIN</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Status"
+                name="isActive"
+                rules={[{ required: true, message: 'Please select status!' }]}
+              >
+                <Select>
+                  <Select.Option value={true}>Active</Select.Option>
+                  <Select.Option value={false}>Inactive</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Update User
+              </Button>
+              <Button onClick={() => setUpdateModalVisible(false)}>
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

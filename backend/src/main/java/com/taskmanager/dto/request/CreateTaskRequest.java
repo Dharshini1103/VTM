@@ -19,7 +19,7 @@ public class CreateTaskRequest {
     @NotNull(message = "Priority is required")
     private Task.TaskPriority priority;
 
-    private Task.TaskStatus status; // optional on create, defaults to TO_DO if not provided
+    private Task.TaskStatus status; // optional on create, defaults to PENDING if not provided
     
     @NotNull(message = "Deadline is required")
     @FutureOrPresent(message = "Deadline must be in the future or present")

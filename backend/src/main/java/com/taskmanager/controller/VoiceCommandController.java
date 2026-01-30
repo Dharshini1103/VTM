@@ -24,7 +24,7 @@ public class VoiceCommandController {
 
     private Long getCurrentUserId() {
         // Extract user ID from JWT token
-        return 1L; // This will be set properly through security context
+        return 3L; // This will be set properly through security context - using existing user ID 3
     }
 
     @PostMapping("/process")

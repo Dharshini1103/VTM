@@ -41,16 +41,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf().disable()
-            .exceptionHandling()
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-            .and()
-            .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .authorizeHttpRequests()
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/users").permitAll()
+                .requestMatchers(HttpMethod.GET, "/users/all").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/tasks/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/tasks/**").authenticated()
@@ -59,8 +57,8 @@ public class SecurityConfig {
                 .requestMatchers("/voice/**").authenticated()
                 .requestMatchers("/meetings/**").authenticated()
                 .anyRequest().authenticated()
-            .and()
-            .headers().frameOptions().disable();
+            )
+            .headers(headers -> headers.frameOptions().disable());
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

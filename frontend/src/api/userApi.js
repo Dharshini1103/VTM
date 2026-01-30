@@ -13,6 +13,10 @@ const userApi = {
     return axiosClient.get('/users');
   },
 
+  getAllUsers: () => {
+    return axiosClient.get('/users/all');
+  },
+
   updateUser: (userId, userData) => {
     return axiosClient.put(`/users/${userId}`, userData);
   },

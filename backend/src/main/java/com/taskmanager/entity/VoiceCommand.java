@@ -1,16 +1,10 @@
 package com.taskmanager.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "voice_commands")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class VoiceCommand {
 
     @Id
@@ -40,11 +34,9 @@ public class VoiceCommand {
     @Column(columnDefinition = "TEXT")
     private String metadata;
 
-    @Builder.Default
     @Column(name = "processed_successfully")
     private Boolean processedSuccessfully = false;
 
-    @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -57,4 +49,52 @@ public class VoiceCommand {
         ASSIGN_TASK,
         NONE
     }
+
+    public VoiceCommand() {}
+
+    public VoiceCommand(Long id, User user, String voiceInput, String textOutput, 
+                       CommandIntent intent, Double confidenceScore, Long taskId, 
+                       String metadata, Boolean processedSuccessfully, LocalDateTime createdAt) {
+        this.id = id;
+        this.user = user;
+        this.voiceInput = voiceInput;
+        this.textOutput = textOutput;
+        this.intent = intent;
+        this.confidenceScore = confidenceScore;
+        this.taskId = taskId;
+        this.metadata = metadata;
+        this.processedSuccessfully = processedSuccessfully;
+        this.createdAt = createdAt;
+    }
+
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
+    public String getVoiceInput() { return voiceInput; }
+    public void setVoiceInput(String voiceInput) { this.voiceInput = voiceInput; }
+
+    public String getTextOutput() { return textOutput; }
+    public void setTextOutput(String textOutput) { this.textOutput = textOutput; }
+
+    public CommandIntent getIntent() { return intent; }
+    public void setIntent(CommandIntent intent) { this.intent = intent; }
+
+    public Double getConfidenceScore() { return confidenceScore; }
+    public void setConfidenceScore(Double confidenceScore) { this.confidenceScore = confidenceScore; }
+
+    public Long getTaskId() { return taskId; }
+    public void setTaskId(Long taskId) { this.taskId = taskId; }
+
+    public String getMetadata() { return metadata; }
+    public void setMetadata(String metadata) { this.metadata = metadata; }
+
+    public Boolean getProcessedSuccessfully() { return processedSuccessfully; }
+    public void setProcessedSuccessfully(Boolean processedSuccessfully) { this.processedSuccessfully = processedSuccessfully; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

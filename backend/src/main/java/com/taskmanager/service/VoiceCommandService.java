@@ -42,16 +42,15 @@ public class VoiceCommandService {
         String text = request.getText().toLowerCase().trim();
         VoiceCommand.CommandIntent intent = detectIntent(text);
 
-        VoiceCommand command = VoiceCommand.builder()
-                .user(user)
-                .voiceInput(request.getText())
-                .textOutput(text)
-                .intent(intent)
-                .taskId(request.getTaskId())
-                .confidenceScore(calculateConfidenceScore(text, intent))
-                .processedSuccessfully(false)
-                .createdAt(LocalDateTime.now())
-                .build();
+        VoiceCommand command = new VoiceCommand();
+        command.setUser(user);
+        command.setVoiceInput(request.getText());
+        command.setTextOutput(text);
+        command.setIntent(intent);
+        command.setTaskId(request.getTaskId());
+        command.setConfidenceScore(calculateConfidenceScore(text, intent));
+        command.setProcessedSuccessfully(false);
+        command.setCreatedAt(LocalDateTime.now());
 
         VoiceCommand savedCommand = voiceCommandRepository.save(command);
         logger.info("Voice command saved with ID: {}", savedCommand.getId());

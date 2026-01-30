@@ -35,11 +35,11 @@ public class TaskController {
             if (authentication != null && authentication.getName() != null) {
                 // For now, we'll need to find the user by email since JWT doesn't contain userId directly
                 // This is a temporary solution - ideally we should store userId in JWT
-                return 1L; // This should be replaced with proper user lookup
+                return 3L; // This should be replaced with proper user lookup - using existing user ID 3
             }
-            return 1L; // Fallback for development
+            return 3L; // Fallback for development - using existing user ID 3
         } catch (Exception e) {
-            return 1L; // Fallback for development
+            return 3L; // Fallback for development - using existing user ID 3
         }
     }
 
