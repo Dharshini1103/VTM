@@ -10,6 +10,7 @@ import com.taskmanager.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +45,7 @@ public class TaskController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<TaskDTO>> createTask(@Valid @RequestBody CreateTaskRequest request) {
         Long userId = getCurrentUserId();
         TaskDTO task = taskService.createTask(userId, request);
@@ -105,25 +107,31 @@ public class TaskController {
     @PutMapping("/{taskId}")
     public ResponseEntity<ApiResponse<TaskDTO>> updateTask(@PathVariable Long taskId, 
                                                            @Valid @RequestBody UpdateTaskRequest request) {
-        TaskDTO task = taskService.updateTask(taskId, request);
+        Long userId = getCurrentUserId();
+        TaskDTO task = taskService.updateTask(taskId, request, userId);
         return ResponseEntity.ok(ApiResponse.success("Task updated successfully", task));
     }
 
     @PatchMapping("/{taskId}/complete")
     public ResponseEntity<ApiResponse<TaskDTO>> completeTask(@PathVariable Long taskId) {
-        TaskDTO task = taskService.markTaskAsCompleted(taskId);
+        Long userId = getCurrentUserId();
+        TaskDTO task = taskService.markTaskAsCompleted(taskId, userId);
         return ResponseEntity.ok(ApiResponse.success("Task marked as completed", task));
     }
 
     @PatchMapping("/{taskId}/assign/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<TaskDTO>> assignTask(@PathVariable Long taskId, @PathVariable Long userId) {
-        TaskDTO task = taskService.assignTaskToUser(taskId, userId);
+        Long currentUserId = getCurrentUserId();
+        TaskDTO task = taskService.assignTaskToUser(taskId, userId, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("Task assigned successfully", task));
     }
 
     @DeleteMapping("/{taskId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable Long taskId) {
-        taskService.deleteTask(taskId);
+        Long userId = getCurrentUserId();
+        taskService.deleteTask(taskId, userId);
         return ResponseEntity.ok(ApiResponse.success("Task deleted successfully"));
     }
 }

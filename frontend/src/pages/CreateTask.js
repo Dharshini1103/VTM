@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Input, Select, Button, Card, Row, Col, DatePicker, Spin, Alert } from 'antd';
 import taskApi from '../api/taskApi';
 import userApi from '../api/userApi';
+import { useSelector } from 'react-redux';
 
 function CreateTask() {
   const navigate = useNavigate();
@@ -10,10 +11,16 @@ function CreateTask() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
+  const currentUser = useSelector(state => state.auth.user);
 
   React.useEffect(() => {
+    // Check if user has permission to create tasks
+    if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
+      navigate('/tasks');
+      return;
+    }
     fetchTeamMembers();
-  }, []);
+  }, [currentUser, navigate]);
 
   const fetchTeamMembers = async () => {
     try {

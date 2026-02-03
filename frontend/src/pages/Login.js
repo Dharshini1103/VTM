@@ -17,7 +17,7 @@ function Login() {
     // Auto-fill form if credentials are saved
     if (savedEmail && savedPassword) {
       form.setFieldsValue({
-        email: savedEmail,
+        gmailId: savedEmail,
         password: savedPassword,
       });
       setRememberMeChecked(rememberMe);
@@ -30,12 +30,12 @@ function Login() {
 
   const onFinish = async (values) => {
     try {
-      const response = await authApi.login(values.email, values.password);
+      const response = await authApi.login(values.gmailId, values.password);
       const { data: responseData } = response.data;
       dispatch(loginSuccess({
         user: responseData.user,
         token: responseData.accessToken,
-        email: values.email,
+        email: values.gmailId,
         password: values.password,
         rememberMe: rememberMeChecked,
       }));
@@ -71,14 +71,15 @@ function Login() {
                 onFinish={onFinish}
               >
                 <Form.Item
-                  label="Email"
-                  name="email"
+                  label="Gmail ID"
+                  name="gmailId"
                   rules={[
-                    { required: true, message: 'Please enter your email' },
-                    { type: 'email', message: 'Invalid email format' },
+                    { required: true, message: 'Please enter your Gmail ID' },
+                    { type: 'email', message: 'Invalid Gmail format' },
+                    { pattern: /@gmail\.com$/, message: 'Must be a valid Gmail address' },
                   ]}
                 >
-                  <Input prefix={<MailOutlined />} placeholder="Enter your email" />
+                  <Input prefix={<MailOutlined />} placeholder="your.email@gmail.com" />
                 </Form.Item>
 
                 <Form.Item

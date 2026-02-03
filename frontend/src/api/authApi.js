@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient';
 
 const authApi = {
-  login: (email, password) => {
-    return axiosClient.post('/auth/login', { email, password });
+  login: (gmailId, password) => {
+    return axiosClient.post('/auth/login', { gmailId, password });
   },
 
   register: (data) => {

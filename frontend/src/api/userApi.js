@@ -24,6 +24,10 @@ const userApi = {
   deactivateUser: (userId) => {
     return axiosClient.delete(`/users/${userId}`);
   },
+
+  deleteUserPermanently: (userId) => {
+    return axiosClient.delete(`/users/${userId}/permanent`);
+  },
 };
 
 export default userApi;

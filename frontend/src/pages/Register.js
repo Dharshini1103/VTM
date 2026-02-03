@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Form, Input, Button, Card, Row, Col, Alert, Spin, message } from 'antd';
+import { Form, Input, Button, Card, Row, Col, Alert, Spin, Select, message } from 'antd';
 import { MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
 import authApi from '../api/authApi';
 import { registerFailure } from '../slices/authSlice';
@@ -16,15 +16,16 @@ function Register() {
   const onFinish = async (values) => {
     try {
       const response = await authApi.register({
-        email: values.email,
+        email: values.gmailId, // Use gmailId as email
         gmailId: values.gmailId,
         firstName: values.firstName,
         lastName: values.lastName,
         password: values.password,
+        role: values.role,
       });
       
       // Save credentials to localStorage for auto-fill in login
-      storageManager.setCredentials(values.email, values.password);
+      storageManager.setCredentials(values.gmailId, values.password);
       
       // Show success message
       message.success('Registration successful! Please login with your credentials.');
@@ -62,25 +63,28 @@ function Register() {
                 onFinish={onFinish}
               >
                 <Form.Item
-                  label="Email"
-                  name="email"
-                  rules={[
-                    { required: true, message: 'Please enter your email' },
-                    { type: 'email', message: 'Invalid email format' },
-                  ]}
-                >
-                  <Input prefix={<MailOutlined />} placeholder="Enter your email" />
-                </Form.Item>
-
-                <Form.Item
                   label="Gmail ID"
                   name="gmailId"
                   rules={[
                     { required: true, message: 'Please enter your Gmail ID' },
                     { type: 'email', message: 'Invalid Gmail format' },
+                    { pattern: /@gmail\.com$/, message: 'Must be a valid Gmail address' },
                   ]}
                 >
                   <Input prefix={<MailOutlined />} placeholder="your.email@gmail.com" />
+                </Form.Item>
+
+                <Form.Item
+                  label="Role"
+                  name="role"
+                  rules={[{ required: true, message: 'Please select a role' }]}
+                >
+                  <Select placeholder="Select your role">
+                    <Select.Option value="USER">USER (Employee)</Select.Option>
+                    <Select.Option value="MANAGER">MANAGER</Select.Option>
+                    <Select.Option value="ADMIN">ADMIN</Select.Option>
+                    <Select.Option value="SUPER_ADMIN">SUPER_ADMIN</Select.Option>
+                  </Select>
                 </Form.Item>
 
                 <Form.Item

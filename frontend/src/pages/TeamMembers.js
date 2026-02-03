@@ -26,7 +26,11 @@ function TeamMembers() {
       console.log('Fetching team members...');
       console.log('Current user from Redux:', currentUser);
       
-      const response = await userApi.getAllUsers();
+      // Only ADMIN or SUPER_ADMIN can see all users, others can only see active team members
+      const response = (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN')
+        ? await userApi.getAllUsers()
+        : await userApi.getAllTeamMembers();
+      
       console.log('Team members response:', response);
       const members = response.data?.data || [];
       console.log('Team members:', members);
@@ -77,15 +81,34 @@ function TeamMembers() {
     }
   };
 
+  const isSuperAdmin = (user) => {
+    if (!user) return false;
+    // Role may be serialized as a string ("SUPER_ADMIN") or an object with `name`
+    return user.role === 'SUPER_ADMIN' || user.role?.name === 'SUPER_ADMIN';
+  };
+
+  const isAdminLike = (user) => {
+    if (!user) return false;
+    return user.role === 'ADMIN' || isSuperAdmin(user) || user.role?.name === 'ADMIN';
+  };
+
   const handleDelete = async (memberId) => {
     try {
       setLoading(true);
-      await userApi.deactivateUser(memberId);
-      message.success('User deactivated successfully');
+      if (isSuperAdmin(currentUser)) {
+        await userApi.deleteUserPermanently(memberId);
+        message.success('User deleted permanently');
+      } else {
+        // For ADMINs do a soft delete (deactivate)
+        await userApi.deactivateUser(memberId);
+        message.success('User deactivated successfully');
+      }
       fetchTeamMembers();
     } catch (error) {
-      console.error('Error deactivating user:', error);
-      message.error('Failed to deactivate user');
+      console.error('Error deleting user:', error);
+      // Prefer detailed backend error if provided (ApiResponse.error puts details in `error` field)
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Failed to delete user';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -229,36 +252,45 @@ function TeamMembers() {
           (record.gmailId && record.gmailId === currentUser.email)
         );
         
+        // ADMIN and SUPER_ADMIN can update/delete other users
+        const canEdit = isAdminLike(currentUser) && !isCurrentUser;
+        
         return (
           <Space>
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              size="small"
-              onClick={() => handleUpdate(record)}
-              disabled={!isCurrentUser}
-              title={!isCurrentUser ? "Cannot edit other users" : "Edit your profile"}
-            >
-              Update
-            </Button>
-            <Popconfirm
-              title="Are you sure you want to deactivate this user?"
-              description="This action will deactivate the user account."
-              onConfirm={() => handleDelete(record.id)}
-              okText="Yes"
-              cancelText="No"
-              disabled={!isCurrentUser}
-            >
+            {canEdit && (
               <Button
-                danger
-                icon={<DeleteOutlined />}
+                type="primary"
+                icon={<EditOutlined />}
                 size="small"
-                disabled={!isCurrentUser}
-                title={!isCurrentUser ? "Cannot delete other users" : "Deactivate your account"}
+                onClick={() => handleUpdate(record)}
+                title="Update user"
               >
-                Delete
+                Update
               </Button>
-            </Popconfirm>
+            )}
+            {canEdit && (
+              <Popconfirm
+                title={isSuperAdmin(currentUser) ? "Are you sure you want to permanently delete this user?" : "Are you sure you want to deactivate this user?"}
+                description={isSuperAdmin(currentUser) ? "This action will permanently delete the user account and cannot be undone." : "This action will deactivate the user account; an ADMIN cannot permanently delete users."}
+                onConfirm={() => handleDelete(record.id)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  title={isSuperAdmin(currentUser) ? "Permanently delete user" : "Deactivate user"}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            )}
+            {!canEdit && (
+              <span style={{ color: '#999', fontSize: '12px' }}>
+                {isCurrentUser ? 'Current User' : 'No Actions'}
+              </span>
+            )}
           </Space>
         );
       },
@@ -399,6 +431,9 @@ function TeamMembers() {
                   <Select.Option value="USER">USER</Select.Option>
                   <Select.Option value="MANAGER">MANAGER</Select.Option>
                   <Select.Option value="ADMIN">ADMIN</Select.Option>
+                  {isSuperAdmin(currentUser) && (
+                    <Select.Option value="SUPER_ADMIN">SUPER_ADMIN</Select.Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>

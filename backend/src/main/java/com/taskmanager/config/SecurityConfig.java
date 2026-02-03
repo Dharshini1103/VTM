@@ -45,17 +45,43 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/users").permitAll()
-                .requestMatchers(HttpMethod.GET, "/users/all").permitAll()
-                .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/tasks/**").authenticated()
+                
+                // SUPER_ADMIN only endpoints
+                .requestMatchers(HttpMethod.POST, "/users/super-admin").hasRole("SUPER_ADMIN")
+                .requestMatchers("/admin/system/**").hasRole("SUPER_ADMIN")
+                
+                // User management endpoints - ADMIN and SUPER_ADMIN
+                .requestMatchers(HttpMethod.POST, "/users").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/users/{userId}/permanent").hasRole("SUPER_ADMIN")
+                
+                // User view endpoints - All authenticated users
+                .requestMatchers(HttpMethod.GET, "/users").authenticated()
+                .requestMatchers(HttpMethod.GET, "/users/all").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/users/{userId}").authenticated()
+                .requestMatchers("/users/me").authenticated()
+                
+                // Task management endpoints
+                .requestMatchers(HttpMethod.POST, "/tasks").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/tasks/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/tasks/**").authenticated()
-                .requestMatchers("/users/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/tasks/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()
+                
+                // Manager team endpoints
+                .requestMatchers(HttpMethod.GET, "/tasks/team/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                .requestMatchers("/users/team/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                
+                // Voice and meeting endpoints
                 .requestMatchers("/voice/**").authenticated()
                 .requestMatchers("/meetings/**").authenticated()
+                
+                // Admin-only endpoints
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions().disable());

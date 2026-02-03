@@ -33,8 +33,18 @@ public class User {
     private Boolean isActive = true;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private UserRole role = UserRole.USER;
+
+    @Column(name = "job_title")
+    private String jobTitle;
+
+    @Column(name = "department")
+    private String department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manager_id")
+    private User manager;
 
     @Column(name = "google_calendar_token")
     private String googleCalendarToken;
@@ -79,6 +89,15 @@ public class User {
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
     
+    public String getJobTitle() { return jobTitle; }
+    public void setJobTitle(String jobTitle) { this.jobTitle = jobTitle; }
+    
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+    
+    public User getManager() { return manager; }
+    public void setManager(User manager) { this.manager = manager; }
+    
     public String getGoogleCalendarToken() { return googleCalendarToken; }
     public void setGoogleCalendarToken(String googleCalendarToken) { this.googleCalendarToken = googleCalendarToken; }
     
@@ -95,6 +114,7 @@ public class User {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public enum UserRole {
+        SUPER_ADMIN,
         ADMIN,
         MANAGER,
         USER

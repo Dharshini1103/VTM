@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -118,11 +120,29 @@ public class TaskService {
                 .toList();
     }
 
-    public TaskDTO updateTask(Long taskId, UpdateTaskRequest request) {
-        logger.info("Updating task with ID: {}", taskId);
+    public TaskDTO updateTask(Long taskId, UpdateTaskRequest request, Long currentUserId) {
+        logger.info("Updating task with ID: {} by user: {}", taskId, currentUserId);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+        
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Check permissions: SUPER_ADMIN can update any task, ADMIN can update any task, MANAGER can update team tasks, USER can only update their own assigned tasks
+        if (!currentUser.getRole().equals(User.UserRole.SUPER_ADMIN) && !currentUser.getRole().equals(User.UserRole.ADMIN)) {
+            if (currentUser.getRole().equals(User.UserRole.MANAGER)) {
+                // Manager can only update tasks they created or assigned to their team
+                if (task.getCreatedBy() == null || !task.getCreatedBy().getId().equals(currentUserId)) {
+                    throw new BadRequestException("Manager can only update tasks they created");
+                }
+            } else {
+                // User can only update their own assigned tasks
+                if (task.getAssignedTo() == null || !task.getAssignedTo().getId().equals(currentUserId)) {
+                    throw new BadRequestException("User can only update their own assigned tasks");
+                }
+            }
+        }
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             task.setTitle(request.getTitle());
@@ -150,6 +170,10 @@ public class TaskService {
         if (request.getAssignedToId() != null) {
             User assignee = userRepository.findById(request.getAssignedToId())
                     .orElseThrow(() -> new ResourceNotFoundException("Assignee user not found"));
+            
+            // Validate assignment permissions
+            validateTaskAssignment(currentUser, assignee);
+            
             task.setAssignedTo(assignee);
         }
 
@@ -160,11 +184,21 @@ public class TaskService {
         return TaskDTO.fromEntity(updatedTask);
     }
 
-    public TaskDTO markTaskAsCompleted(Long taskId) {
-        logger.info("Marking task as completed: {}", taskId);
+    public TaskDTO markTaskAsCompleted(Long taskId, Long currentUserId) {
+        logger.info("Marking task as completed: {} by user: {}", taskId, currentUserId);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+        
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Check permissions: SUPER_ADMIN and ADMIN can complete any task, USER can only complete their own assigned tasks
+        if (!currentUser.getRole().equals(User.UserRole.SUPER_ADMIN) && !currentUser.getRole().equals(User.UserRole.ADMIN)) {
+            if (task.getAssignedTo() == null || !task.getAssignedTo().getId().equals(currentUserId)) {
+                throw new BadRequestException("User can only complete their own assigned tasks");
+            }
+        }
 
         task.setStatus(Task.TaskStatus.COMPLETED);
         task.setUpdatedAt(LocalDateTime.now());
@@ -173,14 +207,34 @@ public class TaskService {
         return TaskDTO.fromEntity(updatedTask);
     }
 
-    public TaskDTO assignTaskToUser(Long taskId, Long userId) {
-        logger.info("Assigning task {} to user {}", taskId, userId);
+    public TaskDTO assignTaskToUser(Long taskId, Long userId, Long currentUserId) {
+        logger.info("Assigning task {} to user {} by user: {}", taskId, userId, currentUserId);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+        
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Only SUPER_ADMIN, ADMIN, and MANAGER can assign tasks
+        if (!currentUser.getRole().equals(User.UserRole.SUPER_ADMIN) && 
+            !currentUser.getRole().equals(User.UserRole.ADMIN) && 
+            !currentUser.getRole().equals(User.UserRole.MANAGER)) {
+            throw new BadRequestException("Only SUPER_ADMIN, ADMIN, and MANAGER can assign tasks");
+        }
+        
+        // Manager can only assign tasks they created
+        if (currentUser.getRole().equals(User.UserRole.MANAGER)) {
+            if (task.getCreatedBy() == null || !task.getCreatedBy().getId().equals(currentUserId)) {
+                throw new BadRequestException("Manager can only assign tasks they created");
+            }
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+        
+        // Validate assignment permissions
+        validateTaskAssignment(currentUser, user);
 
         task.setAssignedTo(user);
         task.setUpdatedAt(LocalDateTime.now());
@@ -191,13 +245,77 @@ public class TaskService {
         return TaskDTO.fromEntity(updatedTask);
     }
 
-    public void deleteTask(Long taskId) {
-        logger.info("Deleting task with ID: {}", taskId);
+    private void validateTaskAssignment(User assigner, User assignee) {
+        // SUPER_ADMIN can assign to anyone
+        if (assigner.getRole().equals(User.UserRole.SUPER_ADMIN)) {
+            return;
+        }
+        
+        // ADMIN can assign to MANAGER and USER, but not ADMIN or SUPER_ADMIN
+        if (assigner.getRole().equals(User.UserRole.ADMIN)) {
+            if (assignee.getRole().equals(User.UserRole.ADMIN) || assignee.getRole().equals(User.UserRole.SUPER_ADMIN)) {
+                throw new BadRequestException("ADMIN cannot assign tasks to ADMIN or SUPER_ADMIN");
+            }
+            return;
+        }
+        
+        // MANAGER can only assign to USER
+        if (assigner.getRole().equals(User.UserRole.MANAGER)) {
+            if (!assignee.getRole().equals(User.UserRole.USER)) {
+                throw new BadRequestException("MANAGER can only assign tasks to USER");
+            }
+            return;
+        }
+    }
+
+    public void deleteTask(Long taskId, Long currentUserId) {
+        logger.info("Deleting task with ID: {} by user: {}", taskId, currentUserId);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+        
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Check permissions: SUPER_ADMIN can delete any task, ADMIN can delete any task, MANAGER can only delete tasks they created
+        if (!currentUser.getRole().equals(User.UserRole.SUPER_ADMIN) && !currentUser.getRole().equals(User.UserRole.ADMIN)) {
+            if (currentUser.getRole().equals(User.UserRole.MANAGER)) {
+                if (task.getCreatedBy() == null || !task.getCreatedBy().getId().equals(currentUserId)) {
+                    throw new BadRequestException("Manager can only delete tasks they created");
+                }
+            } else {
+                throw new BadRequestException("Users cannot delete tasks");
+            }
+        }
 
         taskRepository.delete(task);
         logger.info("Task deleted successfully: {}", taskId);
+    }
+
+    // Team-based task methods
+    public List<TaskDTO> getTeamTasks(Long managerId) {
+        List<User> teamMembers = userRepository.findTeamMembers(managerId);
+        List<Task> teamTasks = new ArrayList<>();
+        
+        for (User member : teamMembers) {
+            teamTasks.addAll(taskRepository.findByAssignedToId(member.getId()));
+        }
+        
+        return teamTasks.stream()
+                .map(TaskDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskDTO> getTasksByDepartment(String department) {
+        List<User> departmentUsers = userRepository.findActiveUsersByDepartment(department);
+        List<Task> departmentTasks = new ArrayList<>();
+        
+        for (User user : departmentUsers) {
+            departmentTasks.addAll(taskRepository.findByAssignedToId(user.getId()));
+        }
+        
+        return departmentTasks.stream()
+                .map(TaskDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 }
