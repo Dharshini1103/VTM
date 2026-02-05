@@ -3,10 +3,16 @@ package com.taskmanager.controller;
 import com.taskmanager.dto.VoiceCommandDTO;
 import com.taskmanager.dto.request.VoiceInputRequest;
 import com.taskmanager.dto.response.ApiResponse;
+import com.taskmanager.entity.User;
+import com.taskmanager.repository.UserRepository;
+import com.taskmanager.service.TaskService;
 import com.taskmanager.service.VoiceCommandService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,14 +23,49 @@ import java.util.List;
 public class VoiceCommandController {
 
     private final VoiceCommandService voiceCommandService;
+    private final TaskService taskService;
+    private final ObjectMapper objectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+    private final UserRepository userRepository;
 
-    public VoiceCommandController(VoiceCommandService voiceCommandService) {
+    public VoiceCommandController(VoiceCommandService voiceCommandService, 
+                                TaskService taskService,
+                                ObjectMapper objectMapper,
+    private static final Logger logger = LoggerFactory.getLogger(VoiceCommandController.class);
+                                UserRepository userRepository) {
         this.voiceCommandService = voiceCommandService;
+        this.taskService = taskService;
+        this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
     }
 
     private Long getCurrentUserId() {
-        // Extract user ID from JWT token
-        return 3L; // This will be set properly through security context - using existing user ID 3
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                // Extract the email/username from authentication principal
+                String principal = authentication.getName();
+                
+                // Find the user by email in the database
+                User user = userRepository.findByEmail(principal)
+                        .or(() -> userRepository.findByGmailId(principal))
+                        .orElse(null);
+                
+                if (user != null) {
+                    return user.getId();
+                }
+                logger.debug("Voice endpoint authentication principal: {}", principal);
+            // If we cannot determine the user, throw an exception
+            throw new RuntimeException("Unable to determine current user");
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving current user: " + e.getMessage());
+        }
+                if (user != null) {
+                    logger.debug("Resolved voice endpoint user: id={}, email={}", user.getId(), user.getEmail());
+                } else {
+                    logger.warn("Could not resolve user for principal: {}", principal);
+                }
     }
 
     @PostMapping("/process")
@@ -33,6 +74,35 @@ public class VoiceCommandController {
         VoiceCommandDTO command = voiceCommandService.processVoiceCommand(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Voice command processed", command));
+    }
+
+    @PostMapping("/create-task")
+    public ResponseEntity<ApiResponse<Object>> createTaskFromVoice(@Valid @RequestBody VoiceInputRequest request) {
+        try {
+            Long userId = getCurrentUserId();
+            VoiceCommandDTO command = voiceCommandService.processVoiceCommand(userId, request);
+            
+            // Extract task details from metadata
+            if (command.getMetadata() != null && !command.getMetadata().isEmpty()) {
+                VoiceCommandService.TaskDetails taskDetails = objectMapper.readValue(
+                    command.getMetadata(), 
+                    VoiceCommandService.TaskDetails.class
+                );
+                
+                // Create task using extracted details
+                Object createdTask = taskService.createTaskFromVoice(userId, taskDetails);
+                
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(ApiResponse.success("Task created from voice command", createdTask));
+            }
+            
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Could not extract task details from voice command"));
+                    
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error creating task from voice command: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/{commandId}")

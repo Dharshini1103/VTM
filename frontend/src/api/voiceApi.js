@@ -5,6 +5,10 @@ const voiceApi = {
     return axiosClient.post('/voice/process', voiceData);
   },
 
+  createTaskFromVoice: (voiceData) => {
+    return axiosClient.post('/voice/create-task', voiceData);
+  },
+
   getVoiceCommand: (commandId) => {
     return axiosClient.get(`/voice/${commandId}`);
   },

@@ -102,6 +102,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
         String token = tokenProvider.generateToken(savedUser.getId(), savedUser.getEmail());
         return new LoginResponse(token, 86400000L, UserDTO.fromEntity(savedUser));
+
     }
 
 
@@ -173,13 +174,16 @@ public class UserService {
             user.setProfilePhoto(updateRequest.getProfilePhoto());
         }
         if (updateRequest.getRole() != null) {
-            // Only ADMIN can change roles
+            // Only ADMIN can change roles (validation enforced in the overload that takes currentUserId)
             user.setRole(updateRequest.getRole());
         }
         if (updateRequest.getIsActive() != null) {
-            // Only ADMIN can change active status
+            // Only ADMIN can change active status (validation enforced in the overload that takes currentUserId)
             user.setIsActive(updateRequest.getIsActive());
         }
+
+        // Allow setting/changing manager via update request when provided
+
 
         User updatedUser = userRepository.save(user);
         return UserDTO.fromEntity(updatedUser);
@@ -285,14 +289,18 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         
         logger.debug("Attempting permanent delete: currentUser id={} role={} -> targetUser id={} role={}", currentUser.getId(), currentUser.getRole(), targetUser.getId(), targetUser.getRole());
+        
         // Only SUPER_ADMIN can permanently delete users
         if (!currentUser.getRole().equals(User.UserRole.SUPER_ADMIN)) {
             throw new RuntimeException("Only SUPER_ADMIN can permanently delete users");
         }
         
-        // SUPER_ADMIN cannot delete other SUPER_ADMIN
-        if (targetUser.getRole().equals(User.UserRole.SUPER_ADMIN)) {
-            throw new RuntimeException("SUPER_ADMIN cannot delete other SUPER_ADMIN");
+        // Allow self-deletion for SUPER_ADMIN
+        if (!currentUser.getId().equals(targetUser.getId())) {
+            // SUPER_ADMIN cannot delete other SUPER_ADMIN (but can delete themselves)
+            if (targetUser.getRole().equals(User.UserRole.SUPER_ADMIN)) {
+                throw new RuntimeException("SUPER_ADMIN cannot delete other SUPER_ADMIN");
+            }
         }
         
         // Find all tasks associated with this user

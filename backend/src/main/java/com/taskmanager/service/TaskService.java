@@ -9,6 +9,7 @@ import com.taskmanager.exception.ResourceNotFoundException;
 import com.taskmanager.exception.BadRequestException;
 import com.taskmanager.repository.TaskRepository;
 import com.taskmanager.repository.UserRepository;
+import com.taskmanager.service.VoiceCommandService.TaskDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -317,5 +318,102 @@ public class TaskService {
         return departmentTasks.stream()
                 .map(TaskDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    // Create task from voice command
+    public TaskDTO createTaskFromVoice(Long userId, TaskDetails taskDetails) {
+        logger.info("Creating task from voice command for user: {}", userId);
+        
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        Task task = new Task();
+        task.setTitle(taskDetails.getTitle() != null ? taskDetails.getTitle() : "Voice Task");
+        task.setDescription(taskDetails.getDescription() != null ? taskDetails.getDescription() : "Created from voice command");
+        
+        // Convert string priority to enum
+        String priorityStr = taskDetails.getPriority() != null ? taskDetails.getPriority() : "MEDIUM";
+        Task.TaskPriority priority;
+        switch (priorityStr.toUpperCase()) {
+            case "HIGH":
+            case "URGENT":
+                priority = Task.TaskPriority.HIGH;
+                break;
+            case "LOW":
+                priority = Task.TaskPriority.LOW;
+                break;
+            default:
+                priority = Task.TaskPriority.MEDIUM;
+        }
+        task.setPriority(priority);
+        
+        // Convert string status to enum
+        String statusStr = taskDetails.getStatus() != null ? taskDetails.getStatus() : "TODO";
+        Task.TaskStatus status;
+        switch (statusStr.toUpperCase()) {
+            case "IN_PROGRESS":
+            case "PROGRESS":
+                status = Task.TaskStatus.IN_PROGRESS;
+                break;
+            case "COMPLETED":
+            case "DONE":
+                status = Task.TaskStatus.COMPLETED;
+                break;
+            default:
+                status = Task.TaskStatus.PENDING;
+        }
+        task.setStatus(status);
+        
+        task.setCreatedBy(currentUser);
+        
+        // Handle assignment
+        if (taskDetails.getAssignedTo() != null && !taskDetails.getAssignedTo().isEmpty()) {
+            // Try to find user by email
+            User assignedUser = userRepository.findByEmail(taskDetails.getAssignedTo()).orElse(null);
+            if (assignedUser == null) {
+                // Try to find by gmailId
+                assignedUser = userRepository.findByGmailId(taskDetails.getAssignedTo()).orElse(null);
+            }
+            
+            if (assignedUser != null) {
+                task.setAssignedTo(assignedUser);
+                logger.info("Task assigned to user: {}", assignedUser.getEmail());
+            } else {
+                logger.warn("Could not find user for assignment: {}", taskDetails.getAssignedTo());
+                // Assign to current user if assignment fails
+                task.setAssignedTo(currentUser);
+            }
+        } else {
+            // Assign to current user if no specific assignment
+            task.setAssignedTo(currentUser);
+        }
+        
+        // Handle due date (deadline field)
+        if (taskDetails.getDueDate() != null) {
+            switch (taskDetails.getDueDate()) {
+                case "TODAY":
+                    task.setDeadline(LocalDate.now());
+                    break;
+                case "TOMORROW":
+                    task.setDeadline(LocalDate.now().plusDays(1));
+                    break;
+                case "NEXT_WEEK":
+                    task.setDeadline(LocalDate.now().plusWeeks(1));
+                    break;
+                case "FUTURE":
+                    task.setDeadline(LocalDate.now().plusDays(7)); // Default to 1 week
+                    break;
+                default:
+                    task.setDeadline(null);
+            }
+        }
+        
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUpdatedAt(LocalDateTime.now());
+        
+        Task savedTask = taskRepository.save(task);
+        logger.info("Task created successfully with ID: {}", savedTask.getId());
+        
+        return TaskDTO.fromEntity(savedTask);
     }
 }

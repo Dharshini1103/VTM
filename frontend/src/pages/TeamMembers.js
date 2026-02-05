@@ -61,7 +61,7 @@ function TeamMembers() {
       lastName: member.lastName,
       email: member.email,
       role: member.role,
-      isActive: member.isActive
+      isActive: member.isActive,
     });
     setUpdateModalVisible(true);
   };
@@ -69,13 +69,24 @@ function TeamMembers() {
   const handleUpdateSubmit = async (values) => {
     try {
       setLoading(true);
-      await userApi.updateUser(selectedMember.id, values);
-      message.success('User updated successfully');
+      const isCurrentUser = currentUser && (
+        selectedMember.id === currentUser.id || 
+        selectedMember.email === currentUser.email ||
+        (selectedMember.gmailId && selectedMember.gmailId === currentUser.email)
+      );
+      
+      // For self-updates, pass current user ID for RBAC validation
+      const updateData = isCurrentUser ? { ...values, currentUserId: currentUser.id } : values;
+      
+      await userApi.updateUser(selectedMember.id, updateData);
+      message.success(isCurrentUser ? 'Profile updated successfully' : 'User updated successfully');
       setUpdateModalVisible(false);
       fetchTeamMembers();
     } catch (error) {
       console.error('Error updating user:', error);
-      message.error('Failed to update user');
+      // Prefer detailed backend error where available
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to update user';
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -95,7 +106,26 @@ function TeamMembers() {
   const handleDelete = async (memberId) => {
     try {
       setLoading(true);
-      if (isSuperAdmin(currentUser)) {
+      const isCurrentUser = currentUser && (
+        memberId === currentUser.id || 
+        members.find(m => m.id === memberId)?.email === currentUser.email ||
+        members.find(m => m.id === memberId)?.gmailId === currentUser.email
+      );
+      
+      if (isCurrentUser) {
+        // User is deleting their own account - use permanent delete regardless of role
+        await userApi.deleteUserPermanently(memberId);
+        message.success('Your account has been deleted successfully');
+        
+        // Logout the user and redirect to login
+        setTimeout(() => {
+          // Clear local storage and Redux state
+          localStorage.clear();
+          window.location.href = '/login';
+        }, 2000);
+        return; // Don't fetch team members after self-deletion
+      } else if (isSuperAdmin(currentUser)) {
+        // SUPER_ADMIN deleting other users
         await userApi.deleteUserPermanently(memberId);
         message.success('User deleted permanently');
       } else {
@@ -118,6 +148,8 @@ function TeamMembers() {
     switch (role) {
       case 'ADMIN':
         return 'red';
+      case 'SUPER_ADMIN':
+        return 'purple';
       case 'MANAGER':
         return 'blue';
       case 'USER':
@@ -253,60 +285,137 @@ function TeamMembers() {
         );
         
         // ADMIN and SUPER_ADMIN can update/delete other users
-        const canEdit = isAdminLike(currentUser) && !isCurrentUser;
+        const canEditOthers = isAdminLike(currentUser) && !isCurrentUser;
+        
+        // Users can always update their own profile
+        const canEditSelf = isCurrentUser;
+        
+        // Users can delete their own account (with confirmation)
+        const canDeleteSelf = isCurrentUser;
         
         return (
           <Space>
-            {canEdit && (
+            {(canEditOthers || canEditSelf) && (
               <Button
                 type="primary"
                 icon={<EditOutlined />}
                 size="small"
                 onClick={() => handleUpdate(record)}
-                title="Update user"
+                title={isCurrentUser ? "Update your profile" : "Update user"}
               >
-                Update
+                {isCurrentUser ? "Edit Profile" : "Update"}
               </Button>
             )}
-            {canEdit && (
+            {(canEditOthers || canDeleteSelf) && (
               <Popconfirm
-                title={isSuperAdmin(currentUser) ? "Are you sure you want to permanently delete this user?" : "Are you sure you want to deactivate this user?"}
-                description={isSuperAdmin(currentUser) ? "This action will permanently delete the user account and cannot be undone." : "This action will deactivate the user account; an ADMIN cannot permanently delete users."}
+                title={isCurrentUser 
+                  ? "Are you sure you want to delete your account? This will log you out immediately!" 
+                  : (isSuperAdmin(currentUser) 
+                    ? "Are you sure you want to permanently delete this user?" 
+                    : "Are you sure you want to deactivate this user?")
+                }
+                description={isCurrentUser 
+                  ? "This action will permanently delete your account and cannot be undone. You will be logged out immediately."
+                  : (isSuperAdmin(currentUser) 
+                    ? "This action will permanently delete the user account and cannot be undone." 
+                    : "This action will deactivate the user account; an ADMIN cannot permanently delete users.")
+                }
                 onConfirm={() => handleDelete(record.id)}
                 okText="Yes"
                 cancelText="No"
+                okButtonProps={{ danger: true }}
               >
                 <Button
                   danger
                   icon={<DeleteOutlined />}
                   size="small"
-                  title={isSuperAdmin(currentUser) ? "Permanently delete user" : "Deactivate user"}
+                  title={isCurrentUser 
+                    ? "Delete your account" 
+                    : (isSuperAdmin(currentUser) ? "Permanently delete user" : "Deactivate user")
+                  }
                 >
-                  Delete
+                  {isCurrentUser ? "Delete Account" : "Delete"}
                 </Button>
               </Popconfirm>
             )}
-            {!canEdit && (
+            {!canEditOthers && !canEditSelf && !canDeleteSelf && (
               <span style={{ color: '#999', fontSize: '12px' }}>
-                {isCurrentUser ? 'Current User' : 'No Actions'}
+                No Actions
               </span>
             )}
           </Space>
         );
       },
-      width: '20%',
+      width: '25%',
     },
   ];
 
-  const activeMembers = members.filter(m => m.isActive).length;
-  const inactiveMembers = members.filter(m => !m.isActive).length;
-  const adminCount = members.filter(m => m.role === 'ADMIN').length;
-  const managerCount = members.filter(m => m.role === 'MANAGER').length;
-  const userCount = members.filter(m => m.role === 'USER').length;
+ const activeMembers = members.filter(m => m.isActive).length;
+const inactiveMembers = members.filter(m => !m.isActive).length;
+
+const superAdminCount = members.filter(m => m.role === 'SUPER_ADMIN').length;
+const adminCount = members.filter(m => m.role === 'ADMIN').length;
+const managerCount = members.filter(m => m.role === 'MANAGER').length;
+const userCount = members.filter(m => m.role === 'USER').length;
 
   return (
     <div>
       <h1 style={{ marginBottom: '30px' }}>Team Members</h1>
+      
+      {/* Current User Info Card */}
+      {currentUser && (
+        <Card 
+          style={{ 
+            marginBottom: '30px', 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none'
+          }}
+        >
+          <Row align="middle" gutter={16}>
+            <Col>
+              <Avatar 
+                size={64} 
+                icon={<CrownOutlined />} 
+                src={currentUser.profilePhoto}
+                style={{ 
+                  backgroundColor: '#faad14',
+                  border: '3px solid white'
+                }}
+              />
+            </Col>
+            <Col flex="auto">
+              <h2 style={{ color: 'white', margin: 0 }}>
+                {currentUser.firstName} {currentUser.lastName}
+              </h2>
+              <p style={{ color: 'white', margin: '4px 0', fontSize: '16px' }}>
+                <MailOutlined style={{ marginRight: '8px' }} />
+                {currentUser.email}
+              </p>
+              <Space>
+                <Tag color="gold" style={{ fontSize: '12px' }}>
+                  <CrownOutlined style={{ marginRight: '4px' }} />
+                  CURRENT USER
+                </Tag>
+                <Tag color={getRoleColor(currentUser.role)} style={{ fontSize: '12px' }}>
+                  {currentUser.role}
+                </Tag>
+              </Space>
+            </Col>
+            <Col>
+              <Button 
+                type="primary" 
+                ghost
+                icon={<EditOutlined />}
+                onClick={() => handleUpdate(currentUser)}
+                style={{ border: '1px solid white' }}
+              >
+                Edit Profile
+              </Button>
+            </Col>
+          </Row>
+        </Card>
+      )}
 
       <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
         <Col xs={24} sm={12} lg={6}>
@@ -338,13 +447,48 @@ function TeamMembers() {
             />
           </Card>
         </Col>
+       <Col xs={24} sm={12} md={6}>
+          <Card>
+            <Statistic
+              title="Super Admins"
+              value={superAdminCount}
+              prefix={<CrownOutlined />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Role-based Statistics */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
+        
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Admins"
+              value={adminCount}
+              prefix={<EditOutlined />}
+              valueStyle={{ color: '#f5222d' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8}>
+          <Card>
+            <Statistic
+              title="Managers"
+              value={managerCount}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Users"
               value={userCount}
               prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1890ff' }} 
             />
           </Card>
         </Col>
@@ -377,7 +521,13 @@ function TeamMembers() {
 
       {/* Update User Modal */}
       <Modal
-        title={`Update User: ${selectedMember?.firstName} ${selectedMember?.lastName}`}
+        title={selectedMember && currentUser && (
+          (selectedMember.id === currentUser.id || 
+           selectedMember.email === currentUser.email ||
+           (selectedMember.gmailId && selectedMember.gmailId === currentUser.email))
+          ? "Edit Your Profile" 
+          : `Update User: ${selectedMember?.firstName} ${selectedMember?.lastName}`
+        )}
         open={updateModalVisible}
         onCancel={() => setUpdateModalVisible(false)}
         footer={null}
@@ -420,41 +570,53 @@ function TeamMembers() {
             <Input />
           </Form.Item>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Role"
-                name="role"
-                rules={[{ required: true, message: 'Please select a role!' }]}
-              >
-                <Select>
-                  <Select.Option value="USER">USER</Select.Option>
-                  <Select.Option value="MANAGER">MANAGER</Select.Option>
-                  <Select.Option value="ADMIN">ADMIN</Select.Option>
-                  {isSuperAdmin(currentUser) && (
-                    <Select.Option value="SUPER_ADMIN">SUPER_ADMIN</Select.Option>
-                  )}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Status"
-                name="isActive"
-                rules={[{ required: true, message: 'Please select status!' }]}
-              >
-                <Select>
-                  <Select.Option value={true}>Active</Select.Option>
-                  <Select.Option value={false}>Inactive</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
+          {/* Show role and status only when editing other users, not self */}
+          {!(selectedMember && currentUser && (
+            (selectedMember.id === currentUser.id || 
+             selectedMember.email === currentUser.email ||
+             (selectedMember.gmailId && selectedMember.gmailId === currentUser.email))
+          )) && (
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Role"
+                  name="role"
+                  rules={[{ required: true, message: 'Please select a role!' }]}
+                >
+                  <Select>
+                    <Select.Option value="USER">USER</Select.Option>
+                    <Select.Option value="MANAGER">MANAGER</Select.Option>
+                    <Select.Option value="ADMIN">ADMIN</Select.Option>
+                    {isSuperAdmin(currentUser) && (
+                      <Select.Option value="SUPER_ADMIN">SUPER_ADMIN</Select.Option>
+                    )}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="Status"
+                  name="isActive"
+                  rules={[{ required: true, message: 'Please select status!' }]}
+                >
+                  <Select>
+                    <Select.Option value={true}>Active</Select.Option>
+                    <Select.Option value={false}>Inactive</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+          )}
 
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={loading}>
-                Update User
+                {selectedMember && currentUser && (
+                  (selectedMember.id === currentUser.id || 
+                   selectedMember.email === currentUser.email ||
+                   (selectedMember.gmailId && selectedMember.gmailId === currentUser.email))
+                  ? "Update Profile" : "Update User"
+                )}
               </Button>
               <Button onClick={() => setUpdateModalVisible(false)}>
                 Cancel

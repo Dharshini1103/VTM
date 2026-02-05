@@ -14,9 +14,9 @@ function CreateTask() {
   const currentUser = useSelector(state => state.auth.user);
 
   React.useEffect(() => {
-    // Check if user has permission to create tasks
-    if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MANAGER')) {
-      navigate('/tasks');
+    // Check if user is authenticated
+    if (!currentUser) {
+      navigate('/login');
       return;
     }
     fetchTeamMembers();
@@ -36,19 +36,33 @@ function CreateTask() {
       setLoading(true);
       setError(null);
 
+      // Validate deadline
+      if (!values.deadline) {
+        setError('Deadline is required');
+        setLoading(false);
+        return;
+      }
+
       const taskData = {
         title: values.title,
-        description: values.description,
+        description: values.description || '',
         priority: values.priority,
-        status: values.status,
+        status: values.status || 'PENDING',
         deadline: values.deadline.format('YYYY-MM-DD'),
         assignedToId: values.assignedToId,
       };
 
-      await taskApi.createTask(taskData);
-      navigate('/tasks');
+      console.log('Creating task with data:', taskData);
+      const response = await taskApi.createTask(taskData);
+      console.log('Task created successfully:', response.data);
+      
+      // Success message and navigation
+      setTimeout(() => {
+        navigate('/tasks');
+      }, 500);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error creating task');
+      console.error('Error creating task:', err);
+      setError(err.response?.data?.error || err.response?.data?.message || 'Error creating task');
     } finally {
       setLoading(false);
     }

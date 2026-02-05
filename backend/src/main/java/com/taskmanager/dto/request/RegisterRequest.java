@@ -33,7 +33,6 @@ public class RegisterRequest {
     @Size(max = 100, message = "Department must not exceed 100 characters")
     private String department;
     
-    private Long managerId;
     
     // Getters and setters
     public String getGmailId() { return gmailId; }
@@ -56,7 +55,4 @@ public class RegisterRequest {
     
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
-    
-    public Long getManagerId() { return managerId; }
-    public void setManagerId(Long managerId) { this.managerId = managerId; }
 }

@@ -2,21 +2,23 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Button, Space, Tag, Modal, Input, Select, Row, Col, Card, Spin, Empty, Alert } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined, AudioOutlined, StopOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
 import taskApi from '../api/taskApi';
 import voiceApi from '../api/voiceApi';
 
 function Tasks() {
   const navigate = useNavigate();
+  const currentUser = useSelector(state => state.auth.user);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState(null);
   const [filterPriority, setFilterPriority] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   // Voice input local state
   const [viLoading, setViLoading] = useState(false);
   const [viError, setViError] = useState(null);
-  const [manualVoiceText, setManualVoiceText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -115,22 +117,46 @@ function Tasks() {
     try {
       setViLoading(true);
       setViError(null);
-      await voiceApi.processVoiceCommand({ text: manualVoiceText || 'Voice input', audioBase64 });
-      setManualVoiceText('');
-      await fetchTasks();
+      
+      // Process voice command and extract task details
+      const response = await voiceApi.createTaskFromVoice({ 
+        text: 'Voice input', 
+        audioBase64: audioBase64 
+      });
+      
+      if (response.data.success && response.data.data) {
+        const taskData = response.data.data;
+        
+        // Prepare task data for creation
+        const createPayload = {
+          title: taskData.title,
+          description: taskData.description || '',
+          priority: taskData.priority || 'MEDIUM',
+          status: taskData.status || 'PENDING',
+          assignedToId: taskData.assignedTo?.id || taskData.assignedTo,
+          deadline: taskData.deadline
+        };
+        
+        // Validate required fields
+        if (!createPayload.title || !createPayload.assignedToId || !createPayload.deadline) {
+          setViError('Voice input incomplete. Please provide: title, assigned person, and deadline');
+          return;
+        }
+        
+        // Create the task directly
+        await taskApi.createTask(createPayload);
+        
+        // Show success message and refresh tasks
+        setViError(null);
+        await fetchTasks();
+      } else {
+        setViError('Failed to extract task details from voice command');
+      }
     } catch (e) {
-      setViError(e.response?.data?.error || e.message || 'Error processing voice');
+      setViError(e.response?.data?.error || e.message || 'Error processing voice command');
     } finally {
       setViLoading(false);
     }
-  };
-
-  const submitManualVoice = async () => {
-    if (!manualVoiceText.trim()) {
-      setViError('Please enter a command');
-      return;
-    }
-    await processVoice('');
   };
 
   const columns = [
@@ -223,15 +249,28 @@ function Tasks() {
         <Col xs={24}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h1>Tasks</h1>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              size="large"
-              onClick={() => navigate('/tasks/new')}
-            >
-              Create Task
-            </Button>
+            <Space>
+              <Button
+                type="default"
+                icon={<AudioOutlined />}
+                size="large"
+                onClick={!isRecording ? startRecording : stopRecording}
+                danger={isRecording}
+                loading={viLoading}
+              >
+                {isRecording ? 'Stop Recording' : 'Voice Input'}
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                size="large"
+                onClick={() => navigate('/tasks/new')}
+              >
+                Create Task
+              </Button>
+            </Space>
           </div>
+          {viError && <Alert message={viError} type="error" showIcon style={{ marginTop: '12px' }} />}
         </Col>
       </Row>
 
@@ -271,28 +310,6 @@ function Tasks() {
                 { label: 'Urgent', value: 'URGENT' },
               ]}
             />
-          </Col>
-          <Col xs={24} sm={24} md={6}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {!isRecording ? (
-                <Button icon={<AudioOutlined />} onClick={startRecording} loading={viLoading}>
-                  Voice
-                </Button>
-              ) : (
-                <Button danger icon={<StopOutlined />} onClick={stopRecording}>
-                  Stop
-                </Button>
-              )}
-              <Input
-                placeholder="e.g., Assign task 42 to John"
-                value={manualVoiceText}
-                onChange={(e) => setManualVoiceText(e.target.value)}
-              />
-              <Button type="primary" onClick={submitManualVoice} loading={viLoading}>
-                Go
-              </Button>
-            </div>
-            {viError && <Alert type="error" showIcon style={{ marginTop: 8 }} message={viError} />}
           </Col>
         </Row>
       </Card>
