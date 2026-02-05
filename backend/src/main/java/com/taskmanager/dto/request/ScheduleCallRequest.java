@@ -1,46 +1,53 @@
 package com.taskmanager.dto.request;
 
-
-
-import com.taskmanager.entity.Task;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-
-import jakarta.validation.constraints.*;
-
-import java.time.LocalDateTime;
-
-
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 public class ScheduleCallRequest {
+    @NotEmpty
+    private String title;
 
-    
+    @NotNull
+    private String startDateTime; // ISO-8601 string expected
 
-    @NotNull(message = "Task ID is required")
+    @NotNull
+    private String endDateTime; // ISO-8601 string expected
 
-    @Positive(message = "Task ID must be positive")
+    private List<String> attendees; // emails
 
-    private Long taskId;
+    public ScheduleCallRequest() {}
 
-    
+    public String getTitle() {
+        return title;
+    }
 
-    @NotNull(message = "Call type is required")
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    private Task.CallType callType;
+    public String getStartDateTime() {
+        return startDateTime;
+    }
 
-    
+    public void setStartDateTime(String startDateTime) {
+        this.startDateTime = startDateTime;
+    }
 
-    @NotNull(message = "Scheduled date and time is required")
+    public String getEndDateTime() {
+        return endDateTime;
+    }
 
-    @FutureOrPresent(message = "Scheduled time must be in the future")
+    public void setEndDateTime(String endDateTime) {
+        this.endDateTime = endDateTime;
+    }
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    public List<String> getAttendees() {
+        return attendees;
+    }
 
-    private LocalDateTime scheduledDateTime;
-
-    
-
-    private String description;
-
+    public void setAttendees(List<String> attendees) {
+        this.attendees = attendees;
+    }
 }
 

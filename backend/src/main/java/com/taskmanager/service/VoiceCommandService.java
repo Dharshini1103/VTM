@@ -295,4 +295,22 @@ public class VoiceCommandService {
         voiceCommandRepository.save(command);
         logger.info("Voice command marked as processed: {}", commandId);
     }
+
+    public void deleteVoiceCommand(Long commandId, Long requestingUserId) {
+        VoiceCommand command = voiceCommandRepository.findById(commandId)
+                .orElseThrow(() -> new ResourceNotFoundException("Voice command not found"));
+
+        User requester = userRepository.findById(requestingUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Requesting user not found"));
+
+        boolean isOwner = command.getUser() != null && command.getUser().getId().equals(requestingUserId);
+        boolean isAdmin = requester.getRole() == User.UserRole.ADMIN || requester.getRole() == User.UserRole.SUPER_ADMIN;
+
+        if (!isOwner && !isAdmin) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to delete this command");
+        }
+
+        voiceCommandRepository.delete(command);
+        logger.info("Voice command deleted: {} by user {}", commandId, requestingUserId);
+    }
 }

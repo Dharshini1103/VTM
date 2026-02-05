@@ -3,6 +3,7 @@ import { Table, Card, Empty, Spin, Row, Col, Statistic, Avatar, Tag, Space, Butt
 import { UserOutlined, TeamOutlined, MailOutlined, CheckCircleOutlined, CloseCircleOutlined, CrownOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import userApi from '../api/userApi';
 import { useSelector } from 'react-redux';
+import storageManager from '../utils/storageManager';
 
 function TeamMembers() {
   const [members, setMembers] = useState([]);
@@ -11,6 +12,7 @@ function TeamMembers() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [updateForm] = Form.useForm();
   const currentUser = useSelector(state => state.auth.user);
+  const loggedUser = currentUser || storageManager.getUser();
 
   useEffect(() => {
     fetchTeamMembers();
@@ -25,9 +27,12 @@ function TeamMembers() {
       setLoading(true);
       console.log('Fetching team members...');
       console.log('Current user from Redux:', currentUser);
+      const storedUser = storageManager.getUser();
+      console.log('Persisted user from storage:', storedUser);
       
       // Only ADMIN or SUPER_ADMIN can see all users, others can only see active team members
-      const response = (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN')
+      const role = currentUser?.role || storedUser?.role;
+      const response = (role === 'ADMIN' || role === 'SUPER_ADMIN')
         ? await userApi.getAllUsers()
         : await userApi.getAllTeamMembers();
       
@@ -41,7 +46,7 @@ function TeamMembers() {
           id: member.id,
           email: member.email,
           name: `${member.firstName} ${member.lastName}`,
-          isCurrentUser: currentUser && member.id === currentUser.id
+          isCurrentUser: (currentUser || storageManager.getUser()) && member.id === (currentUser || storageManager.getUser()).id
         });
       });
       
@@ -69,14 +74,15 @@ function TeamMembers() {
   const handleUpdateSubmit = async (values) => {
     try {
       setLoading(true);
-      const isCurrentUser = currentUser && (
-        selectedMember.id === currentUser.id || 
-        selectedMember.email === currentUser.email ||
-        (selectedMember.gmailId && selectedMember.gmailId === currentUser.email)
+      const loggedUser = currentUser || storageManager.getUser();
+      const isCurrentUser = loggedUser && (
+        selectedMember.id === loggedUser.id || 
+        selectedMember.email === loggedUser.email ||
+        (selectedMember.gmailId && selectedMember.gmailId === loggedUser.email)
       );
       
       // For self-updates, pass current user ID for RBAC validation
-      const updateData = isCurrentUser ? { ...values, currentUserId: currentUser.id } : values;
+      const updateData = isCurrentUser ? { ...values, currentUserId: loggedUser.id } : values;
       
       await userApi.updateUser(selectedMember.id, updateData);
       message.success(isCurrentUser ? 'Profile updated successfully' : 'User updated successfully');
@@ -106,10 +112,11 @@ function TeamMembers() {
   const handleDelete = async (memberId) => {
     try {
       setLoading(true);
-      const isCurrentUser = currentUser && (
-        memberId === currentUser.id || 
-        members.find(m => m.id === memberId)?.email === currentUser.email ||
-        members.find(m => m.id === memberId)?.gmailId === currentUser.email
+      const loggedUser = currentUser || storageManager.getUser();
+      const isCurrentUser = loggedUser && (
+        memberId === loggedUser.id || 
+        members.find(m => m.id === memberId)?.email === loggedUser.email ||
+        members.find(m => m.id === memberId)?.gmailId === loggedUser.email
       );
       
       if (isCurrentUser) {
@@ -124,7 +131,7 @@ function TeamMembers() {
           window.location.href = '/login';
         }, 2000);
         return; // Don't fetch team members after self-deletion
-      } else if (isSuperAdmin(currentUser)) {
+      } else if (isSuperAdmin(currentUser || storageManager.getUser())) {
         // SUPER_ADMIN deleting other users
         await userApi.deleteUserPermanently(memberId);
         message.success('User deleted permanently');
@@ -204,7 +211,7 @@ function TeamMembers() {
               </div>
               {isCurrentUser && (
                 <div style={{ color: '#faad14', fontSize: '11px', fontWeight: 'bold' }}>
-                  Current User: {currentUser.email}
+                  Current User: {(currentUser || storageManager.getUser()).email}
                 </div>
               )}
             </div>
@@ -278,14 +285,15 @@ function TeamMembers() {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => {
-        const isCurrentUser = currentUser && (
-          record.id === currentUser.id || 
-          record.email === currentUser.email ||
-          (record.gmailId && record.gmailId === currentUser.email)
+        const loggedUser = currentUser || storageManager.getUser();
+        const isCurrentUser = loggedUser && (
+          record.id === loggedUser.id || 
+          record.email === loggedUser.email ||
+          (record.gmailId && record.gmailId === loggedUser.email)
         );
         
         // ADMIN and SUPER_ADMIN can update/delete other users
-        const canEditOthers = isAdminLike(currentUser) && !isCurrentUser;
+        const canEditOthers = isAdminLike(loggedUser) && !isCurrentUser;
         
         // Users can always update their own profile
         const canEditSelf = isCurrentUser;
@@ -310,13 +318,13 @@ function TeamMembers() {
               <Popconfirm
                 title={isCurrentUser 
                   ? "Are you sure you want to delete your account? This will log you out immediately!" 
-                  : (isSuperAdmin(currentUser) 
+                  : (isSuperAdmin(currentUser || storageManager.getUser()) 
                     ? "Are you sure you want to permanently delete this user?" 
                     : "Are you sure you want to deactivate this user?")
                 }
                 description={isCurrentUser 
                   ? "This action will permanently delete your account and cannot be undone. You will be logged out immediately."
-                  : (isSuperAdmin(currentUser) 
+                  : (isSuperAdmin(currentUser || storageManager.getUser()) 
                     ? "This action will permanently delete the user account and cannot be undone." 
                     : "This action will deactivate the user account; an ADMIN cannot permanently delete users.")
                 }
@@ -331,7 +339,7 @@ function TeamMembers() {
                   size="small"
                   title={isCurrentUser 
                     ? "Delete your account" 
-                    : (isSuperAdmin(currentUser) ? "Permanently delete user" : "Deactivate user")
+                    : (isSuperAdmin(currentUser || storageManager.getUser()) ? "Permanently delete user" : "Deactivate user")
                   }
                 >
                   {isCurrentUser ? "Delete Account" : "Delete"}
@@ -363,7 +371,7 @@ const userCount = members.filter(m => m.role === 'USER').length;
       <h1 style={{ marginBottom: '30px' }}>Team Members</h1>
       
       {/* Current User Info Card */}
-      {currentUser && (
+      {(currentUser || storageManager.getUser()) && (
         <Card 
           style={{ 
             marginBottom: '30px', 
@@ -377,7 +385,7 @@ const userCount = members.filter(m => m.role === 'USER').length;
               <Avatar 
                 size={64} 
                 icon={<CrownOutlined />} 
-                src={currentUser.profilePhoto}
+                src={(currentUser || storageManager.getUser()).profilePhoto}
                 style={{ 
                   backgroundColor: '#faad14',
                   border: '3px solid white'
@@ -386,19 +394,19 @@ const userCount = members.filter(m => m.role === 'USER').length;
             </Col>
             <Col flex="auto">
               <h2 style={{ color: 'white', margin: 0 }}>
-                {currentUser.firstName} {currentUser.lastName}
+                {(currentUser || storageManager.getUser()).firstName} {(currentUser || storageManager.getUser()).lastName}
               </h2>
               <p style={{ color: 'white', margin: '4px 0', fontSize: '16px' }}>
                 <MailOutlined style={{ marginRight: '8px' }} />
-                {currentUser.email}
+                {(currentUser || storageManager.getUser()).email}
               </p>
               <Space>
                 <Tag color="gold" style={{ fontSize: '12px' }}>
                   <CrownOutlined style={{ marginRight: '4px' }} />
                   CURRENT USER
                 </Tag>
-                <Tag color={getRoleColor(currentUser.role)} style={{ fontSize: '12px' }}>
-                  {currentUser.role}
+                <Tag color={getRoleColor((currentUser || storageManager.getUser()).role)} style={{ fontSize: '12px' }}>
+                  {(currentUser || storageManager.getUser()).role}
                 </Tag>
               </Space>
             </Col>
@@ -407,7 +415,7 @@ const userCount = members.filter(m => m.role === 'USER').length;
                 type="primary" 
                 ghost
                 icon={<EditOutlined />}
-                onClick={() => handleUpdate(currentUser)}
+                onClick={() => handleUpdate(currentUser || storageManager.getUser())}
                 style={{ border: '1px solid white' }}
               >
                 Edit Profile

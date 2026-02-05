@@ -5,10 +5,12 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeOutlined
 import { useSelector } from 'react-redux';
 import taskApi from '../api/taskApi';
 import voiceApi from '../api/voiceApi';
+import storageManager from '../utils/storageManager';
 
 function Tasks() {
   const navigate = useNavigate();
   const currentUser = useSelector(state => state.auth.user);
+  const loggedUser = currentUser || storageManager.getUser(); // Fallback to persisted user if Redux state lost
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');

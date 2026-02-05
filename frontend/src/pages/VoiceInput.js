@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Card, Button, Space, Input, Spin, Empty, Alert, Tag, List } from 'antd';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
 import voiceApi from '../api/voiceApi';
+import { useSelector } from 'react-redux';
+import storageManager from '../utils/storageManager';
 
 function VoiceInput() {
   const [isRecording, setIsRecording] = useState(false);
@@ -12,6 +14,7 @@ function VoiceInput() {
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
+  const currentUser = useSelector((state) => state.auth.user);
 
   const handleStartRecording = async () => {
     try {
@@ -60,7 +63,36 @@ function VoiceInput() {
         text: manualInput || 'Voice input processed',
         audioBase64,
       });
-      setCommands([response.data.data, ...commands]);
+      const command = response.data.data;
+      setCommands([command, ...commands]);
+      // If the command indicates scheduling a call, call schedule endpoint
+      if (command.intent === 'SCHEDULE_CALL' || command.intent === 'SCHEDULE_MEETING') {
+        try {
+          // Determine role: try redux store first, then local storage fallback
+          const loggedUser = currentUser || storageManager.getUser();
+          const role = loggedUser?.role || loggedUser?.role?.name;
+
+          if (!(role === 'ADMIN' || role === 'MANAGER' || role === 'SUPER_ADMIN')) {
+            setError('You do not have permission to schedule calls.');
+            throw new Error('Forbidden');
+          }
+          if (command.metadata) {
+            const details = JSON.parse(command.metadata);
+            const schedulePayload = {
+              title: details.title || command.textOutput || 'Scheduled Call',
+              startDateTime: details.startDateTime || details.start || new Date().toISOString(),
+              endDateTime: details.endDateTime || details.end || new Date(Date.now() + 30 * 60000).toISOString(),
+              attendees: details.attendees || details.participants || [],
+            };
+
+            const schedResp = await voiceApi.scheduleCall(schedulePayload);
+            // Add scheduling response to history
+            setCommands(prev => [{ ...command, scheduleResult: schedResp.data.data }, ...prev]);
+          }
+        } catch (schedErr) {
+          setError('Error scheduling call: ' + (schedErr?.message || schedErr));
+        }
+      }
       setManualInput('');
     } catch (err) {
       setError('Error processing voice command: ' + err.message);
@@ -152,7 +184,23 @@ function VoiceInput() {
             <List
               dataSource={commands}
               renderItem={(command) => (
-                <List.Item>
+                <List.Item
+                  actions={[
+                    <Button danger onClick={async () => {
+                      try {
+                        setLoading(true);
+                        await voiceApi.deleteVoiceCommand(command.id);
+                        setCommands(prev => prev.filter(c => c.id !== command.id));
+                      } catch (e) {
+                        setError('Error deleting command: ' + (e?.message || e));
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}>
+                      Delete
+                    </Button>
+                  ]}
+                >
                   <List.Item.Meta
                     title={
                       <Space>

@@ -20,6 +20,14 @@ const voiceApi = {
   markCommandAsProcessed: (commandId) => {
     return axiosClient.post(`/voice/${commandId}/mark-processed`);
   },
+ 
+  scheduleCall: (payload) => {
+    return axiosClient.post('/voice/schedule-call', payload);
+  },
+
+  deleteVoiceCommand: (commandId) => {
+    return axiosClient.delete(`/voice/${commandId}`);
+  },
 };
 
 export default voiceApi;

@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-@SuppressWarnings("null")
 public class TaskService {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskService.class);
