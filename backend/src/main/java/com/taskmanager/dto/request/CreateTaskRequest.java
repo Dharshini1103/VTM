@@ -27,6 +27,8 @@ public class CreateTaskRequest {
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate deadline;
     
+    private String deadlineTime; // Store time as HH:mm format
+    
     @NotNull(message = "Assignee ID is required")
     @Positive(message = "Assignee ID must be positive")
     private Long assignedToId;
@@ -46,6 +48,9 @@ public class CreateTaskRequest {
     
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public String getDeadlineTime() { return deadlineTime; }
+    public void setDeadlineTime(String deadlineTime) { this.deadlineTime = deadlineTime; }
     
     public Long getAssignedToId() { return assignedToId; }
     public void setAssignedToId(Long assignedToId) { this.assignedToId = assignedToId; }

@@ -1,0 +1,226 @@
+.professional-meeting-scheduler {
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+.scheduler-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  color: #1a1a1a;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-row {
+  margin-bottom: 24px;
+}
+
+.stats-row .ant-card {
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.stats-row .ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.meeting-tabs {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-tabs .ant-tabs-tab {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.meeting-tabs .ant-tabs-tab-active {
+  color: #1890ff;
+}
+
+.schedule-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-form {
+  padding: 16px 0;
+}
+
+.meeting-form .ant-form-item-label > label {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.meeting-form .ant-input,
+.meeting-form .ant-select-selector,
+.meeting-form .ant-picker {
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s ease;
+}
+
+.meeting-form .ant-input:focus,
+.meeting-form .ant-select-focused .ant-select-selector,
+.meeting-form .ant-picker:hover,
+.meeting-form .ant-picker:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.meetings-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.meetings-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.meetings-table .ant-table-tbody > tr > td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meetings-table .ant-table-tbody > tr:hover > td {
+  background: #f5f7fa;
+}
+
+.meetings-table .ant-avatar {
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.ant-alert {
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  border: none;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #40a9ff, #1890ff);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.4);
+}
+
+.ant-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ant-tabs-content-holder {
+  padding-top: 16px;
+}
+
+.ant-select-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .professional-meeting-scheduler {
+    padding: 16px;
+  }
+  
+  .stats-row .ant-col {
+    margin-bottom: 16px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .meeting-tabs {
+    padding: 12px;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

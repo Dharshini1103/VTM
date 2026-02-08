@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +38,11 @@ public class UserService {
 
     @Autowired
     private JwtTokenProvider tokenProvider;
+
+    // In-memory OTP storage (in production, use Redis or database)
+    private final Map<String, String> otpStorage = new ConcurrentHashMap<>();
+    private final Map<String, Long> otpExpiry = new ConcurrentHashMap<>();
+    private static final long OTP_EXPIRY_MINUTES = 10;
 
     public LoginResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getGmailId())) {
@@ -109,16 +117,16 @@ public class UserService {
     public LoginResponse login(LoginRequest request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getGmailId());
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("User not found with this email address");
         }
 
         User user = userOpt.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("Incorrect password. Please check your password and try again");
         }
 
         if (!user.getIsActive()) {
-            throw new RuntimeException("Account is deactivated");
+            throw new RuntimeException("Your account has been deactivated. Please contact administrator");
         }
 
         String token = tokenProvider.generateToken(user.getId(), user.getEmail());
@@ -348,5 +356,72 @@ public class UserService {
         return users.stream()
                 .map(UserDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    // Password management methods
+    public void updatePassword(String oldPassword, String newPassword) {
+        // Get current user from security context
+        String currentUserEmail = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify old password
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    public void sendPasswordResetOtp(String gmailId) {
+        userRepository.findByEmail(gmailId)
+                .orElseThrow(() -> new RuntimeException("User not found with this Gmail ID"));
+
+        // Generate 6-digit OTP
+        String otp = String.format("%06d", new Random().nextInt(1000000));
+        
+        // Store OTP with expiry
+        otpStorage.put(gmailId, otp);
+        otpExpiry.put(gmailId, System.currentTimeMillis() + (OTP_EXPIRY_MINUTES * 60 * 1000));
+
+        // Log OTP (in production, send email)
+        logger.info("OTP for password reset for {}: {}", gmailId, otp);
+        logger.info("In production, this OTP should be sent to the user's email address");
+        
+        // TODO: Implement email sending service
+        // emailService.sendOtpEmail(user.getEmail(), otp);
+    }
+
+    public void verifyOtp(String gmailId, String otp) {
+        String storedOtp = otpStorage.get(gmailId);
+        Long expiryTime = otpExpiry.get(gmailId);
+
+        if (storedOtp == null) {
+            throw new RuntimeException("OTP not found. Please request a new OTP.");
+        }
+
+        if (System.currentTimeMillis() > expiryTime) {
+            otpStorage.remove(gmailId);
+            otpExpiry.remove(gmailId);
+            throw new RuntimeException("OTP has expired. Please request a new OTP.");
+        }
+
+        if (!storedOtp.equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        // OTP is valid, remove it from storage
+        otpStorage.remove(gmailId);
+        otpExpiry.remove(gmailId);
+    }
+
+    public void resetPassword(String gmailId, String newPassword) {
+        User user = userRepository.findByEmail(gmailId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

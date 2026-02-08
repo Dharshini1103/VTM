@@ -5,8 +5,28 @@ const meetingApi = {
     return axiosClient.post('/meetings/schedule-meet', meetData);
   },
 
-  scheduleCall: (callData) => {
-    return axiosClient.post('/meetings/schedule-call', callData);
+  scheduleMeeting: (meetingData) => {
+    return axiosClient.post('/meetings/schedule', meetingData);
+  },
+
+  getAllMeetings: () => {
+    return axiosClient.get('/meetings');
+  },
+
+  getMeetings: () => {
+    return axiosClient.get('/meetings');
+  },
+
+  updateMeeting: (meetingId, meetingData) => {
+    return axiosClient.put(`/meetings/${meetingId}`, meetingData);
+  },
+
+  deleteMeeting: (meetingId) => {
+    return axiosClient.delete(`/meetings/${meetingId}`);
+  },
+
+  syncWithGoogleCalendar: (meetingId) => {
+    return axiosClient.post(`/meetings/${meetingId}/sync-calendar`);
   },
 
   syncTaskWithCalendar: (taskId) => {

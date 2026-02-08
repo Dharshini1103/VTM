@@ -29,6 +29,9 @@ public class Task {
     @Column(nullable = false)
     private LocalDate deadline;
 
+    @Column(name = "deadline_time")
+    private String deadlineTime; // Store time as HH:mm format
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private User createdBy;
@@ -77,6 +80,9 @@ public class Task {
     
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public String getDeadlineTime() { return deadlineTime; }
+    public void setDeadlineTime(String deadlineTime) { this.deadlineTime = deadlineTime; }
     
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }

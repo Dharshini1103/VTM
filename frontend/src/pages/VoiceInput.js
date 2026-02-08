@@ -93,6 +93,40 @@ function VoiceInput() {
           setError('Error scheduling call: ' + (schedErr?.message || schedErr));
         }
       }
+      
+      // If the command indicates task creation, create the task
+      if (command.intent === 'CREATE_TASK') {
+        try {
+          if (command.metadata) {
+            const taskDetails = JSON.parse(command.metadata);
+            const createPayload = {
+              title: taskDetails.title || command.textOutput || 'Voice Created Task',
+              description: taskDetails.description || '',
+              priority: taskDetails.priority || 'MEDIUM',
+              status: taskDetails.status || 'PENDING',
+              deadline: taskDetails.deadline || new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              assignedToId: taskDetails.assignedToId || (currentUser?.id || storageManager.getUser()?.id),
+            };
+
+            if (createPayload.title && createPayload.assignedToId) {
+              const taskResponse = await voiceApi.createTaskFromVoice({
+                text: command.textOutput,
+                audioBase64,
+                metadata: command.metadata
+              });
+              
+              // Add task creation result to history
+              setCommands(prev => [{ 
+                ...command, 
+                taskResult: taskResponse.data.data,
+                intent: 'CREATE_TASK_SUCCESS'
+              }, ...prev]);
+            }
+          }
+        } catch (taskErr) {
+          setError('Error creating task from voice: ' + (taskErr?.message || taskErr));
+        }
+      }
       setManualInput('');
     } catch (err) {
       setError('Error processing voice command: ' + err.message);
@@ -114,6 +148,7 @@ function VoiceInput() {
       SCHEDULE_CALL: 'blue',
       SCHEDULE_MEETING: 'green',
       CREATE_TASK: 'orange',
+      CREATE_TASK_SUCCESS: 'green',
       UPDATE_TASK: 'cyan',
       MARK_COMPLETE: 'purple',
       ASSIGN_TASK: 'magenta',
@@ -204,8 +239,13 @@ function VoiceInput() {
                   <List.Item.Meta
                     title={
                       <Space>
-                        {command.textOutput || 'Voice input'}
-                        <Tag color={getIntentColor(command.intent)}>{command.intent}</Tag>
+                        {command.intent === 'CREATE_TASK_SUCCESS' 
+                          ? `Task Created: ${command.taskResult?.title || command.textOutput || 'Voice Task'}`
+                          : command.textOutput || 'Voice input'
+                        }
+                        <Tag color={getIntentColor(command.intent)}>
+                          {command.intent === 'CREATE_TASK_SUCCESS' ? 'Task Created' : command.intent}
+                        </Tag>
                       </Space>
                     }
                     description={`Confidence: ${(command.confidenceScore * 100).toFixed(1)}% | ${new Date(command.createdAt).toLocaleString()}`}

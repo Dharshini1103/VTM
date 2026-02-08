@@ -80,6 +80,12 @@ public class TaskController {
         return ResponseEntity.ok(ApiResponse.success("Task retrieved", task));
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getAllTasks() {
+        List<TaskDTO> tasks = taskService.getAllTasks();
+        return ResponseEntity.ok(ApiResponse.success("All tasks retrieved", tasks));
+    }
+
     @GetMapping("/user/my-tasks")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getMyTasks() {
         Long userId = getCurrentUserId();

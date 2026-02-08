@@ -23,6 +23,8 @@ public class UpdateTaskRequest {
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate deadline;
     
+    private String deadlineTime; // Store time as HH:mm format
+    
     private Long assignedToId;
     
     // Getters and setters
@@ -40,6 +42,9 @@ public class UpdateTaskRequest {
     
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public String getDeadlineTime() { return deadlineTime; }
+    public void setDeadlineTime(String deadlineTime) { this.deadlineTime = deadlineTime; }
     
     public Long getAssignedToId() { return assignedToId; }
     public void setAssignedToId(Long assignedToId) { this.assignedToId = assignedToId; }

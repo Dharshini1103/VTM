@@ -11,7 +11,7 @@ import Tasks from './pages/Tasks';
 import TaskDetail from './pages/TaskDetail';
 import CreateTask from './pages/CreateTask';
 import EditTask from './pages/EditTask';
-import VoiceInput from './pages/VoiceInput';
+import MeetingScheduler from './pages/ProfessionalMeetingScheduler';
 import TeamMembers from './pages/TeamMembers';
 import Profile from './pages/Profile';
 import ScheduleMeeting from './pages/ScheduleMeeting';
@@ -79,7 +79,7 @@ function App() {
             path="/voice"
             element={
               <PrivateRoute>
-                <VoiceInput />
+                <MeetingScheduler />
               </PrivateRoute>
             }
           />

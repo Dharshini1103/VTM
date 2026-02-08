@@ -10,7 +10,7 @@ const userApi = {
   },
 
   getAllTeamMembers: () => {
-    return axiosClient.get('/users');
+    return axiosClient.get('/users/team');
   },
 
   getAllUsers: () => {
@@ -21,8 +21,12 @@ const userApi = {
     return axiosClient.put(`/users/${userId}`, userData);
   },
 
+  changePassword: (userId, passwordData) => {
+    return axiosClient.post(`/users/${userId}/change-password`, passwordData);
+  },
+
   deactivateUser: (userId) => {
-    return axiosClient.delete(`/users/${userId}`);
+    return axiosClient.patch(`/users/${userId}/deactivate`);
   },
 
   deleteUserPermanently: (userId) => {

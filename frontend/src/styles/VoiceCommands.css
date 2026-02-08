@@ -1,0 +1,255 @@
+/* Voice Commands & Task Management Styles */
+
+.voice-control-container {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.voice-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.voice-status-idle {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.voice-status-listening {
+  background-color: #fff7e6;
+  color: #d46b08;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.voice-status-processing {
+  background-color: #e6f7ff;
+  color: #0050b3;
+  animation: spin 1s linear infinite;
+}
+
+.voice-transcript-display {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: #fafafa;
+  border-left: 4px solid #1890ff;
+  border-radius: 4px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.voice-transcript-display.interim {
+  color: #999;
+  font-style: italic;
+}
+
+.voice-transcript-display.final {
+  color: #262626;
+  font-weight: 500;
+}
+
+.task-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px 24px 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.task-table-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #262626;
+}
+
+.task-serial-number {
+  font-weight: 600;
+  color: #1890ff;
+  text-align: center;
+}
+
+.task-row-overdue {
+  background-color: #fff7f7;
+}
+
+.task-row-overdue .ant-table-cell {
+  color: #cf1322;
+}
+
+.voice-command-example {
+  display: inline-block;
+  padding: 4px 12px;
+  margin: 4px;
+  background-color: #f0f2f5;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #262626;
+}
+
+.voice-command-example:before {
+  content: '🎤 ';
+  margin-right: 4px;
+}
+
+.micphone-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Voice Input Button Styles */
+.voice-input-button {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.voice-input-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.voice-input-button.recording {
+  animation: pulse 0.5s ease-in-out infinite;
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+/* Task Table Enhancements */
+.task-table-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+}
+
+.task-table-container .ant-table {
+  border-radius: 8px;
+}
+
+.task-table-container .ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+  color: #262626;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.task-table-container .ant-table-tbody > tr {
+  transition: all 0.3s ease;
+}
+
+.task-table-container .ant-table-tbody > tr:hover {
+  background-color: #f6f8fb;
+}
+
+/* Priority & Status Badge Styles */
+.priority-badge {
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.status-badge {
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Voice Command Documentation */
+.voice-command-doc {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 24px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.voice-command-doc h3 {
+  color: #1890ff;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.voice-command-doc ul {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.voice-command-doc li {
+  margin: 6px 0;
+  color: #262626;
+  line-height: 1.6;
+}
+
+.voice-command-doc code {
+  background-color: rgba(0, 0, 0, 0.04);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  color: #262626;
+}
+
+/* Loading & Error States */
+.voice-error-message {
+  animation: slideDown 0.3s ease-out;
+}
+
+.voice-success-message {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .task-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .task-table-header h1 {
+    font-size: 24px;
+  }
+
+  .voice-control-container {
+    margin-bottom: 16px;
+  }
+}

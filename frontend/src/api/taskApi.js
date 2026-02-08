@@ -9,6 +9,10 @@ const taskApi = {
     return axiosClient.get(`/tasks/${taskId}`);
   },
 
+  getAllTasks: () => {
+    return axiosClient.get('/tasks');
+  },
+
   getUserTasks: () => {
     return axiosClient.get('/tasks/user/my-tasks');
   },

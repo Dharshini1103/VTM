@@ -367,165 +367,84 @@ const managerCount = members.filter(m => m.role === 'MANAGER').length;
 const userCount = members.filter(m => m.role === 'USER').length;
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '30px' }}>Team Members</h1>
+    <div className="content-container">
+      <div className="page-header animate-fade-in-up">
+        <h1 className="page-title">Team Members</h1>
+        <p className="page-subtitle">Manage your team and user roles</p>
+      </div>
       
       {/* Current User Info Card */}
       {(currentUser || storageManager.getUser()) && (
-        <Card 
-          style={{ 
-            marginBottom: '30px', 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            border: 'none'
-          }}
-        >
+        <Card className="user-profile-card animate-slide-in-right">
           <Row align="middle" gutter={16}>
             <Col>
               <Avatar 
                 size={64} 
                 icon={<CrownOutlined />} 
                 src={(currentUser || storageManager.getUser()).profilePhoto}
-                style={{ 
-                  backgroundColor: '#faad14',
-                  border: '3px solid white'
-                }}
+                className="user-avatar"
               />
             </Col>
             <Col flex="auto">
-              <h2 style={{ color: 'white', margin: 0 }}>
-                {(currentUser || storageManager.getUser()).firstName} {(currentUser || storageManager.getUser()).lastName}
-              </h2>
-              <p style={{ color: 'white', margin: '4px 0', fontSize: '16px' }}>
-                <MailOutlined style={{ marginRight: '8px' }} />
-                {(currentUser || storageManager.getUser()).email}
-              </p>
-              <Space>
-                <Tag color="gold" style={{ fontSize: '12px' }}>
-                  <CrownOutlined style={{ marginRight: '4px' }} />
-                  CURRENT USER
-                </Tag>
-                <Tag color={getRoleColor((currentUser || storageManager.getUser()).role)} style={{ fontSize: '12px' }}>
-                  {(currentUser || storageManager.getUser()).role}
-                </Tag>
-              </Space>
+              <div className="user-info">
+                <h2 className="user-name">
+                  {(currentUser || storageManager.getUser()).firstName} {(currentUser || storageManager.getUser()).lastName}
+                </h2>
+                <p className="user-email">
+                  <MailOutlined className="user-email-icon" />
+                  {(currentUser || storageManager.getUser()).email}
+                </p>
+                <Space className="user-tags">
+                  <Tag className="tag-current-user">
+                    <CrownOutlined className="tag-icon" />
+                    CURRENT USER
+                  </Tag>
+                  <Tag className={`tag-role-${(currentUser || storageManager.getUser()).role?.toLowerCase()}`}>
+                    {(currentUser || storageManager.getUser()).role}
+                  </Tag>
+                </Space>
+              </div>
             </Col>
             <Col>
               <Button 
                 type="primary" 
-                ghost
-                icon={<EditOutlined />}
-                onClick={() => handleUpdate(currentUser || storageManager.getUser())}
-                style={{ border: '1px solid white' }}
-              >
-                Edit Profile
-              </Button>
+              />
             </Col>
           </Row>
         </Card>
       )}
-
-      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Members"
-              value={members.length}
-              prefix={<TeamOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Active"
-              value={activeMembers}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Inactive"
-              value={inactiveMembers}
-              prefix={<CloseCircleOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-            />
-          </Card>
-        </Col>
-       <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="Super Admins"
-              value={superAdminCount}
-              prefix={<CrownOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Role-based Statistics */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '30px' }}>
-        
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Admins"
-              value={adminCount}
-              prefix={<EditOutlined />}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8}>
-          <Card>
-            <Statistic
-              title="Managers"
-              value={managerCount}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Users"
-              value={userCount}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }} 
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card title="All Team Members">
-        <Spin spinning={loading}>
-          {members.length === 0 ? (
-            <Empty 
-              description="No team members found" 
-              style={{ margin: '40px 0' }}
-            />
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={members}
-              rowKey="id"
-              pagination={{ 
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => 
-                  `${range[0]}-${range[1]} of ${total} members`
-              }}
-              scroll={{ x: 800 }}
-            />
-          )}
-        </Spin>
-      </Card>
+      
+      {/* Team Members Table */}
+      <div className="task-table-container animate-slide-in-right">
+        <div className="ant-card-head">
+          <div className="ant-card-head-title">All Team Members</div>
+        </div>
+        <div className="ant-card-body">
+          <Spin spinning={loading}>
+            {members.length === 0 ? (
+              <Empty
+                description="No team members found"
+                style={{ paddingTop: 'var(--space-12)', paddingBottom: 'var(--space-12)' }}
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={members}
+                rowKey="id"
+                pagination={{ 
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => 
+                    `${range[0]}-${range[1]} of ${total} members`
+                }}
+                scroll={{ x: 800 }}
+              />
+            )}
+          </Spin>
+        </div>
+      </div>
 
       {/* Update User Modal */}
       <Modal

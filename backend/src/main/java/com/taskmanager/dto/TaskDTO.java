@@ -17,6 +17,9 @@ public class TaskDTO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDate deadline;
+    
+    private String deadlineTime; // Store time as HH:mm format
+    
     private Long createdById;
     private String createdByName;
     private Long assignedToId;
@@ -51,6 +54,9 @@ public class TaskDTO {
     
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+    
+    public String getDeadlineTime() { return deadlineTime; }
+    public void setDeadlineTime(String deadlineTime) { this.deadlineTime = deadlineTime; }
     
     public Long getCreatedById() { return createdById; }
     public void setCreatedById(Long createdById) { this.createdById = createdById; }
@@ -93,6 +99,7 @@ public class TaskDTO {
         dto.setPriority(task.getPriority());
         dto.setStatus(task.getStatus());
         dto.setDeadline(task.getDeadline());
+        dto.setDeadlineTime(task.getDeadlineTime());
         dto.setCreatedById(task.getCreatedBy().getId());
         dto.setCreatedByName(task.getCreatedBy().getFirstName() + " " + task.getCreatedBy().getLastName());
         dto.setAssignedToId(task.getAssignedTo() != null ? task.getAssignedTo().getId() : null);

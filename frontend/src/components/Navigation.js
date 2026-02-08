@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Layout, Menu, Avatar, Dropdown } from 'antd';
-import { LogoutOutlined, UserOutlined, TeamOutlined, FileTextOutlined, AudioOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, TeamOutlined, FileTextOutlined, CalendarOutlined } from '@ant-design/icons';
 import { logout } from '../slices/authSlice';
 
 const { Header } = Layout;
@@ -30,29 +30,16 @@ function Navigation() {
   );
 
   return (
-    <Header
-      style={{
-        background: '#001529',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 50px',
-      }}
-    >
-      <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', cursor: 'pointer' }}
-           onClick={() => navigate('/')}>
-        📋 Task Manager
+    <Header className="header-content">
+      <div className="logo" onClick={() => navigate('/')}>
+        <span className="logo-icon">📋</span>
+        Task Manager
       </div>
 
       <Menu
         theme="dark"
         mode="horizontal"
         defaultSelectedKeys={['dashboard']}
-        style={{ 
-          flex: 1, 
-          minWidth: 0,
-          backgroundColor: 'transparent',
-        }}
         className="custom-menu"
       >
         <Menu.Item key="dashboard" onClick={() => navigate('/')}>
@@ -62,7 +49,7 @@ function Navigation() {
           <FileTextOutlined /> Tasks
         </Menu.Item>
         <Menu.Item key="voice" onClick={() => navigate('/voice')}>
-          <AudioOutlined /> Voice
+          <CalendarOutlined /> Meetings
         </Menu.Item>
         <Menu.Item key="team" onClick={() => navigate('/team')}>
           <TeamOutlined /> Team
@@ -84,7 +71,7 @@ function Navigation() {
           onClick: handleLogout,
         },
       ] }}>
-        <Avatar size="large" icon={<UserOutlined />} style={{ cursor: 'pointer' }} />
+        <Avatar size="large" icon={<UserOutlined />} className="user-avatar" />
       </Dropdown>
     </Header>
   );

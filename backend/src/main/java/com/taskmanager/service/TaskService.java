@@ -54,6 +54,7 @@ public class TaskService {
         task.setPriority(request.getPriority());
         task.setStatus(request.getStatus() != null ? request.getStatus() : Task.TaskStatus.PENDING);
         task.setDeadline(request.getDeadline());
+        task.setDeadlineTime(request.getDeadlineTime());
         task.setCreatedBy(creator);
         task.setAssignedTo(assignee);
         task.setCallScheduled(false);
@@ -70,6 +71,13 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
         return TaskDTO.fromEntity(task);
+    }
+
+    public List<TaskDTO> getAllTasks() {
+        logger.info("Retrieving all tasks for general visibility");
+        return taskRepository.findAll().stream()
+                .map(TaskDTO::fromEntity)
+                .toList();
     }
 
     public List<TaskDTO> getUserTasks(Long userId) {
@@ -165,6 +173,10 @@ public class TaskService {
                 throw new BadRequestException("Deadline must be in the future");
             }
             task.setDeadline(request.getDeadline());
+        }
+
+        if (request.getDeadlineTime() != null) {
+            task.setDeadlineTime(request.getDeadlineTime());
         }
 
         if (request.getAssignedToId() != null) {

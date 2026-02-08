@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Select, Button, Card, Row, Col, DatePicker, Spin, Alert } from 'antd';
+import { Form, Input, Select, Button, Card, Row, Col, DatePicker, TimePicker, Spin, Alert } from 'antd';
 import taskApi from '../api/taskApi';
 import userApi from '../api/userApi';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,7 @@ function CreateTask() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
+  const [deadlineTime, setDeadlineTime] = useState(null);
   const currentUser = useSelector(state => state.auth.user);
 
   React.useEffect(() => {
@@ -26,6 +27,8 @@ function CreateTask() {
     try {
       const response = await userApi.getAllTeamMembers();
       setUsers(response.data.data || []);
+      // Reset form to ensure no default values
+      form.resetFields();
     } catch (err) {
       console.error('Error fetching team members:', err);
     }
@@ -43,12 +46,26 @@ function CreateTask() {
         return;
       }
 
+      let deadline = null;
+      let deadlineTimeValue = null;
+      
+      if (values.deadline) {
+        // Backend expects LocalDate (yyyy-MM-dd) for deadline
+        deadline = values.deadline.format('YYYY-MM-DD');
+        
+        // Backend expects String (HH:mm) for deadlineTime
+        if (deadlineTime) {
+          deadlineTimeValue = deadlineTime.format('HH:mm');
+        }
+      }
+
       const taskData = {
         title: values.title,
         description: values.description || '',
         priority: values.priority,
         status: values.status || 'PENDING',
-        deadline: values.deadline.format('YYYY-MM-DD'),
+        deadline: deadline,
+        deadlineTime: deadlineTimeValue,
         assignedToId: values.assignedToId,
       };
 
@@ -69,13 +86,16 @@ function CreateTask() {
   };
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '30px' }}>Create New Task</h1>
+    <div className="content-container">
+      <div className="page-header animate-fade-in-up">
+        <h1 className="page-title">Create New Task</h1>
+        <p className="page-subtitle">Add a new task to your project</p>
+      </div>
 
-      <Row gutter={16}>
+      <Row gutter={[16, 16]}>
         <Col xs={24} md={16}>
-          <Card>
-            {error && <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: '20px' }} />}
+          <Card className="animate-slide-in-right">
+            {error && <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: 'var(--space-5)' }} />}
 
             <Spin spinning={loading}>
               <Form
@@ -117,7 +137,6 @@ function CreateTask() {
                 <Form.Item
                   label="Status"
                   name="status"
-                  initialValue="PENDING"
                   rules={[{ required: true, message: 'Please select status' }]}
                 >
                   <Select placeholder="Select status">
@@ -146,7 +165,20 @@ function CreateTask() {
                   name="deadline"
                   rules={[{ required: true, message: 'Please select deadline' }]}
                 >
-                  <DatePicker style={{ width: '100%' }} />
+                  <Row gutter={8}>
+                    <Col span={16}>
+                      <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                    </Col>
+                    <Col span={8}>
+                      <TimePicker 
+                        style={{ width: '100%' }} 
+                        placeholder="Select time"
+                        value={deadlineTime}
+                        onChange={(time) => setDeadlineTime(time)}
+                        format="HH:mm"
+                      />
+                    </Col>
+                  </Row>
                 </Form.Item>
 
                 <Form.Item>
