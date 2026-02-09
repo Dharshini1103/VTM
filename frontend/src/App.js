@@ -11,7 +11,7 @@ import Tasks from './pages/Tasks';
 import TaskDetail from './pages/TaskDetail';
 import CreateTask from './pages/CreateTask';
 import EditTask from './pages/EditTask';
-import MeetingScheduler from './pages/ProfessionalMeetingScheduler';
+import MeetingScheduler from './pages/ImageBasedMeetingScheduler';
 import TeamMembers from './pages/TeamMembers';
 import Profile from './pages/Profile';
 import ScheduleMeeting from './pages/ScheduleMeeting';
@@ -77,6 +77,14 @@ function App() {
           />
           <Route
             path="/voice"
+            element={
+              <PrivateRoute>
+                <MeetingScheduler />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/meetings"
             element={
               <PrivateRoute>
                 <MeetingScheduler />

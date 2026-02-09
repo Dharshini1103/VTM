@@ -68,10 +68,18 @@ public class GoogleCalendarService {
         logger.info("[GoogleCalendarService] scheduleCall called - organizer={}, attendees={}, title={}, start={}, end={}",
                 organizerEmail, attendees, title, start, end);
 
-        // Placeholder: Return fake meet link
+        // Placeholder: Return fake meet link with proper format
         // TODO: Replace with real Google Calendar API calls once credentials configured
         String placeholderEventId = "placeholder-" + System.currentTimeMillis();
-        String placeholderMeetLink = "https://meet.google.com/lookup/" + placeholderEventId;
+        
+        // Generate proper Google Meet link format: https://meet.google.com/xxx-xxxx-xxx
+        // Create a more realistic meet code format
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String meetCode = timestamp.substring(timestamp.length() - 12); // Get last 12 digits
+        meetCode = meetCode.substring(0, 3) + "-" + meetCode.substring(3, 7) + "-" + meetCode.substring(7, 11);
+        String placeholderMeetLink = "https://meet.google.com/" + meetCode;
+        
+        logger.info("Generated meet code: {} and link: {}", meetCode, placeholderMeetLink);
 
         logger.warn("[GoogleCalendarService] Using placeholder meet link. To use real Google Meet: provide GOOGLE_CREDENTIALS_FILE, GOOGLE_CLIENT_EMAIL, GOOGLE_PROJECT_ID");
 

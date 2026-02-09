@@ -129,7 +129,14 @@ function TaskDetail() {
                 >
                 Complete
                 </Button>
-                <Button icon={<EditOutlined />} onClick={() => navigate(`/tasks/${taskId}/edit`)} />
+                <Button 
+                icon={<EditOutlined />} 
+                onClick={() => {
+                  console.log('Editing task with ID:', taskId);
+                  console.log('Navigating to:', `/tasks/${taskId}/edit`);
+                  navigate(`/tasks/${taskId}/edit`);
+                }} 
+              />
                 <Button danger icon={<DeleteOutlined />} onClick={handleDelete} />
               </Space>
             </div>
@@ -170,7 +177,7 @@ function TaskDetail() {
 
         <Col xs={24} md={8}>
           <Card title="Schedule Meeting" style={{ marginBottom: '20px' }}>
-            <Button block type="primary" onClick={() => navigate('/meetings/schedule')}>
+            <Button block type="primary" onClick={() => navigate('/meetings?schedule=true')}>
               Schedule Call/Meet
             </Button>
           </Card>

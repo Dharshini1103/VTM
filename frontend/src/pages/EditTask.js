@@ -19,36 +19,51 @@ function EditTask() {
     const init = async () => {
       try {
         setLoading(true);
+        console.log('Loading task with ID:', taskId);
+        
         const [taskRes, usersRes] = await Promise.all([
           taskApi.getTaskById(taskId),
           userApi.getAllTeamMembers(),
         ]);
+        
         console.log('Task response:', taskRes);
-        console.log('Users response:', usersRes);
+        console.log('Task response data:', taskRes.data);
+        console.log('Task response structure:', JSON.stringify(taskRes, null, 2));
         
-        const task = taskRes.data?.data;
-        const users = usersRes.data?.data || [];
+        const task = taskRes.data?.data || taskRes.data || taskRes;
+        const users = usersRes.data?.data || usersRes.data || [];
         
-        console.log('Task data:', task);
-        console.log('Users data:', users);
+        console.log('Extracted task:', task);
+        console.log('Extracted users:', users);
         
         if (!task) {
+          console.error('Task not found for ID:', taskId);
           setError('Task not found');
           return;
         }
         
+        console.log('Setting form values for task:', task);
         setUsers(users);
-        form.setFieldsValue({
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          status: task.status,
-          assignedToId: task.assignedToId,
-          deadline: task.deadline ? dayjs(task.deadline) : null,
-        });
+        
+        // Ensure task data exists before setting form values
+        if (task && typeof task === 'object') {
+          form.setFieldsValue({
+            title: task.title || '',
+            description: task.description || '',
+            priority: task.priority || 'MEDIUM',
+            status: task.status || 'PENDING',
+            assignedToId: task.assignedToId || undefined,
+            deadline: task.deadline ? dayjs(task.deadline) : null,
+          });
+          console.log('Form values set successfully');
+        } else {
+          console.error('Invalid task data:', task);
+          setError('Invalid task data received');
+        }
         
         // Set time if task has deadlineTime (new backend field)
         if (task.deadlineTime) {
+          console.log('Setting deadline time:', task.deadlineTime);
           setDeadlineTime(dayjs(`2023-01-01T${task.deadlineTime}`));
         }
       } catch (err) {
@@ -67,7 +82,8 @@ function EditTask() {
       setSubmitting(true);
       setError(null);
       
-      console.log('Form values:', values);
+      console.log('Edit task form values:', values);
+      console.log('Task ID being updated:', taskId);
       console.log('Selected deadline time:', deadlineTime);
       
       let deadline = null;
@@ -96,6 +112,7 @@ function EditTask() {
       };
       
       console.log('Payload being sent:', payload);
+      console.log('Making API call to update task...');
       
       await taskApi.updateTask(taskId, payload);
       navigate(`/tasks/${taskId}`);
@@ -121,7 +138,13 @@ function EditTask() {
           <Card className="animate-slide-in-right">
             {error && <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: 'var(--space-5)' }} />}
             <Spin spinning={loading}>
-              <Form form={form} layout="vertical" onFinish={onFinish}>
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '50px' }}>
+                  <Spin size="large" />
+                  <div style={{ marginTop: '16px' }}>Loading task data...</div>
+                </div>
+              ) : (
+                <Form form={form} layout="vertical" onFinish={onFinish}>
                 <Form.Item label="Task Title" name="title" rules={[{ required: true, message: 'Please enter task title' }, { min: 3, message: 'Title must be at least 3 characters' }]}>
                   <Input placeholder="Enter task title" />
                 </Form.Item>
@@ -180,6 +203,7 @@ function EditTask() {
                   </Button>
                 </Form.Item>
               </Form>
+              )}
             </Spin>
           </Card>
         </Col>
