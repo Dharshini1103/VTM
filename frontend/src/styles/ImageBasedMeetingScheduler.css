@@ -245,12 +245,11 @@
 
 /* Meetings Styles */
 .meetings-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-  
-  flex-direction: column;
-  
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 100%;
 }
 
 .meetings-header {
@@ -387,9 +386,9 @@
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  margin: 0 auto;
+  margin: 0;
   width: 100%;
-  max-width: 1200px;
+  max-width: none;
 }
 
 .ant-table-wrapper {
@@ -442,7 +441,7 @@
   padding-right: 24px;
 }
 
-/* Center table wrapper - CRITICAL FOR CENTERING */
+/* Center table wrapper for all content */
 .meetings-content .ant-table-wrapper,
 .team-content .ant-table-wrapper,
 .calendar-content .ant-table-wrapper {
@@ -456,32 +455,19 @@
 .team-content .ant-table,
 .calendar-content .ant-table {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
-/* Ensure table cards are centered */
+/* Ensure all table cards use full width */
 .meetings-content .ant-card,
 .team-content .ant-card,
 .calendar-content .ant-card {
-  margin: 0 auto;
-  max-width: 1200px;
+  margin: 0;
+  max-width: none;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Force centering for table containers only */
-.meetings-content,
-.team-content,
-.calendar-content {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  width: 100% !important;
-  padding: 0 20px !important;
+  display: block;
+  align-items: stretch;
 }
 
 /* Select Styles */

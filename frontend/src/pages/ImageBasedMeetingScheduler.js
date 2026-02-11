@@ -732,7 +732,7 @@ function ImageBasedMeetingScheduler() {
             </Title>
           </div>
         </div>
-        </div>
+
         
         <div className="content-area">
           {activeTab === 'dashboard' && (
@@ -1004,6 +1004,7 @@ function ImageBasedMeetingScheduler() {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* Schedule Meeting Modal */}
