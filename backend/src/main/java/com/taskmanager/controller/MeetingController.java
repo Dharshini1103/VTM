@@ -29,14 +29,31 @@ public class MeetingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<MeetingDTO>>> getAllMeetings() {
-        List<MeetingDTO> meetings = meetingService.getAllMeetings();
+        Long currentUserId = getCurrentUserId();
+        List<MeetingDTO> meetings = meetingService.getAllMeetingsWithParticipantInfo(currentUserId);
         return ResponseEntity.ok(ApiResponse.success("Meetings retrieved successfully", meetings));
     }
 
+    @GetMapping("/my-meetings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<MeetingDTO>>> getMyMeetings() {
+        Long currentUserId = getCurrentUserId();
+        List<MeetingDTO> meetings = meetingService.getMeetingsForUser(currentUserId);
+        return ResponseEntity.ok(ApiResponse.success("User meetings retrieved successfully", meetings));
+    }
+
+    @GetMapping("/{meetingId}/can-join")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Boolean>> canJoinMeeting(@PathVariable Long meetingId) {
+        Long currentUserId = getCurrentUserId();
+        boolean canJoin = meetingService.canUserJoinMeeting(meetingId, currentUserId);
+        return ResponseEntity.ok(ApiResponse.success("Join permission checked", canJoin));
+    }
+
     @PostMapping("/schedule")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<MeetingDTO>> scheduleMeeting(@Valid @RequestBody MeetingRequest request) {
         Long currentUserId = getCurrentUserId();
         MeetingDTO meeting = meetingService.scheduleMeeting(request, currentUserId);
@@ -44,17 +61,17 @@ public class MeetingController {
                 .body(ApiResponse.success("Meeting scheduled successfully", meeting));
     }
 
-    @PostMapping("/schedule-meet")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<MeetingDTO>> scheduleGoogleMeet(@Valid @RequestBody MeetingRequest request) {
+    @PostMapping("/schedule-zoom")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<ApiResponse<MeetingDTO>> scheduleZoomMeet(@Valid @RequestBody MeetingRequest request) {
         Long currentUserId = getCurrentUserId();
-        MeetingDTO meeting = meetingService.scheduleGoogleMeet(request, currentUserId);
+        MeetingDTO meeting = meetingService.scheduleZoomMeet(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Google Meet scheduled successfully", meeting));
+                .body(ApiResponse.success("Zoom meeting scheduled successfully", meeting));
     }
 
     @PutMapping("/{meetingId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<MeetingDTO>> updateMeeting(
             @PathVariable Long meetingId,
             @Valid @RequestBody MeetingRequest request) {
@@ -64,7 +81,7 @@ public class MeetingController {
     }
 
     @DeleteMapping("/{meetingId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteMeeting(@PathVariable Long meetingId) {
         Long currentUserId = getCurrentUserId();
         meetingService.deleteMeeting(meetingId, currentUserId);
@@ -72,7 +89,7 @@ public class MeetingController {
     }
 
     @PostMapping("/{meetingId}/sync-calendar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<MeetingDTO>> syncWithGoogleCalendar(@PathVariable Long meetingId) {
         Long currentUserId = getCurrentUserId();
         MeetingDTO meeting = meetingService.syncWithGoogleCalendar(meetingId, currentUserId);
@@ -80,14 +97,14 @@ public class MeetingController {
     }
 
     @GetMapping("/upcoming")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<MeetingDTO>>> getUpcomingMeetings() {
         List<MeetingDTO> meetings = meetingService.getUpcomingMeetings();
         return ResponseEntity.ok(ApiResponse.success("Upcoming meetings retrieved successfully", meetings));
     }
 
     @GetMapping("/today")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<MeetingDTO>>> getTodayMeetings() {
         List<MeetingDTO> meetings = meetingService.getTodayMeetings();
         return ResponseEntity.ok(ApiResponse.success("Today's meetings retrieved successfully", meetings));

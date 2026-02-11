@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .requestMatchers("/users/me").authenticated()
                 
                 // Task management endpoints
-                .requestMatchers(HttpMethod.POST, "/tasks").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                .requestMatchers(HttpMethod.POST, "/tasks").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "USER")
                 .requestMatchers(HttpMethod.PUT, "/tasks/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/tasks/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
                 .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()

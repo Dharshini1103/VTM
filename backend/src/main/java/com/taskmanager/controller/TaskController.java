@@ -66,7 +66,7 @@ public class TaskController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<TaskDTO>> createTask(@Valid @RequestBody CreateTaskRequest request) {
         Long userId = getCurrentUserId();
         TaskDTO task = taskService.createTask(userId, request);
@@ -155,7 +155,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable Long taskId) {
         Long userId = getCurrentUserId();
         taskService.deleteTask(taskId, userId);
