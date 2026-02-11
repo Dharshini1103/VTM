@@ -10,7 +10,7 @@ const userApi = {
   },
 
   getAllTeamMembers: () => {
-    return axiosClient.get('/users/team');
+    return axiosClient.get('/users');
   },
 
   getAllUsers: () => {

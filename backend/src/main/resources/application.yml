@@ -29,7 +29,7 @@ server:
 
 app:
   jwt:
-    secret-key: "your-256-bit-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm-here"
+    secret-key: "mySuperSecretKeyForJWTTokenGenerationThatIsExactly256BitsLongAndSecureForProductionUse123456"
     expiration: 86400000
   google:
     calendar:

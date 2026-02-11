@@ -34,9 +34,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            logger.debug("JWT Filter - Processing request: {}", request.getRequestURI());
+            logger.debug("JWT Filter - Token present: {}", StringUtils.hasText(jwt));
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                logger.debug("JWT Filter - Token validation successful");
                 String email = tokenProvider.getEmailFromToken(jwt);
+                logger.debug("JWT Filter - Email extracted: {}", email);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 UsernamePasswordAuthenticationToken authentication =
@@ -44,9 +48,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                logger.debug("JWT Filter - No token or invalid token");
+                if (StringUtils.hasText(jwt)) {
+                    logger.debug("JWT Filter - Token validation failed");
+                } else {
+                    logger.debug("JWT Filter - No token found");
+                }
             }
         } catch (Exception ex) {
-            logger.error("Could not set user authentication in security context", ex);
+            logger.error("JWT Filter - Could not set user authentication in security context: {}", ex.getMessage());
+            logger.error("JWT Filter - Exception details:", ex);
         }
 
         filterChain.doFilter(request, response);
@@ -54,9 +66,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        logger.debug("JWT Filter - Authorization header: {}", bearerToken);
+        logger.debug("JWT Filter - All headers:");
+        java.util.Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            logger.debug("JWT Filter - {}: {}", headerName, request.getHeader(headerName));
         }
+        
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+            logger.debug("JWT Filter - Token extracted successfully, length: {}", token.length());
+            return token;
+        }
+        logger.debug("JWT Filter - No valid Bearer token found");
         return null;
     }
 }

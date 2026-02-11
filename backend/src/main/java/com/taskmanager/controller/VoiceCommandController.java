@@ -6,7 +6,7 @@ import com.taskmanager.dto.response.ApiResponse;
 import com.taskmanager.entity.User;
 import com.taskmanager.repository.UserRepository;
 import com.taskmanager.service.TaskService;
-import com.taskmanager.service.GoogleCalendarService;
+import com.taskmanager.service.ZoomMeetingService;
 import com.taskmanager.dto.request.ScheduleCallRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.taskmanager.service.VoiceCommandService;
@@ -31,18 +31,18 @@ public class VoiceCommandController {
 
     private final VoiceCommandService voiceCommandService;
     private final TaskService taskService;
-    private final GoogleCalendarService googleCalendarService;
+    private final ZoomMeetingService zoomMeetingService;
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
 
     public VoiceCommandController(VoiceCommandService voiceCommandService, 
                                 TaskService taskService,
-                                GoogleCalendarService googleCalendarService,
+                                ZoomMeetingService zoomMeetingService,
                                 ObjectMapper objectMapper,
                                 UserRepository userRepository) {
         this.voiceCommandService = voiceCommandService;
         this.taskService = taskService;
-        this.googleCalendarService = googleCalendarService;
+        this.zoomMeetingService = zoomMeetingService;
         this.objectMapper = objectMapper;
         this.userRepository = userRepository;
     }
@@ -122,7 +122,7 @@ public class VoiceCommandController {
             java.time.ZonedDateTime start = java.time.ZonedDateTime.parse(request.getStartDateTime());
             java.time.ZonedDateTime end = java.time.ZonedDateTime.parse(request.getEndDateTime());
 
-            GoogleCalendarService.ScheduledCallResult result = googleCalendarService.scheduleCall(
+            ZoomMeetingService.ScheduledCallResult result = zoomMeetingService.scheduleCall(
                     organizerEmail,
                     request.getAttendees(),
                     request.getTitle(),

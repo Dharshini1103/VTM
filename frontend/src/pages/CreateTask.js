@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Select, Button, Card, Row, Col, DatePicker, TimePicker, Spin, Alert } from 'antd';
+import { Form, Input, Select, Button, Card, Row, Col, DatePicker, TimePicker, Spin, Alert, Avatar, Space, Tag } from 'antd';
 import taskApi from '../api/taskApi';
 import userApi from '../api/userApi';
 import { useSelector } from 'react-redux';
@@ -11,6 +11,7 @@ function CreateTask() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [deadlineTime, setDeadlineTime] = useState(null);
   const currentUser = useSelector(state => state.auth.user);
 
@@ -20,17 +21,70 @@ function CreateTask() {
       navigate('/login');
       return;
     }
+    console.log('Current user:', currentUser);
+    console.log('Fetching team members...');
     fetchTeamMembers();
   }, [currentUser, navigate]);
 
   const fetchTeamMembers = async () => {
     try {
-      const response = await userApi.getAllTeamMembers();
-      setUsers(response.data.data || []);
+      setUsersLoading(true);
+      console.log('Fetching all users for create task...');
+      const response = await userApi.getAllUsers();
+      console.log('Users API response:', response);
+      
+      // Use the same data extraction logic as meeting scheduler
+      if (response.data && response.data.success && response.data.data) {
+        console.log('Setting users:', response.data.data);
+        setUsers(response.data.data);
+      } else if (response.data && response.data.data) {
+        console.log('Setting users from direct data:', response.data.data);
+        setUsers(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        console.log('Setting users from array:', response.data);
+        setUsers(response.data);
+      } else {
+        console.log('No users found with getAllUsers, trying getAllTeamMembers...');
+        // Try fallback method
+        try {
+          const teamResponse = await userApi.getAllTeamMembers();
+          console.log('Team members API response:', teamResponse);
+          if (teamResponse.data && teamResponse.data.data) {
+            console.log('Setting team members:', teamResponse.data.data);
+            setUsers(teamResponse.data.data);
+          } else {
+            console.log('No users found, setting empty array');
+            setUsers([]);
+          }
+        } catch (teamError) {
+          console.error('Error fetching team members:', teamError);
+          setUsers([]);
+        }
+      }
+      
       // Reset form to ensure no default values
       form.resetFields();
     } catch (err) {
       console.error('Error fetching team members:', err);
+      console.error('Error response:', err.response);
+      
+      // Try fallback method
+      try {
+        console.log('Trying getAllTeamMembers as fallback...');
+        const teamResponse = await userApi.getAllTeamMembers();
+        console.log('Team members fallback response:', teamResponse);
+        if (teamResponse.data && teamResponse.data.data) {
+          console.log('Setting team members from fallback:', teamResponse.data.data);
+          setUsers(teamResponse.data.data);
+        } else {
+          setUsers([]);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        setUsers([]);
+      }
+    } finally {
+      setUsersLoading(false);
     }
   };
 
@@ -39,9 +93,13 @@ function CreateTask() {
       setLoading(true);
       setError(null);
 
-      // Validate deadline
+      console.log('Form values:', values);
+      console.log('Deadline value:', values.deadline);
+      console.log('Deadline time value:', deadlineTime);
+
+      // Validate deadline - check if it's a valid dayjs object
       if (!values.deadline) {
-        setError('Deadline is required');
+        setError('Please select a deadline');
         setLoading(false);
         return;
       }
@@ -52,10 +110,12 @@ function CreateTask() {
       if (values.deadline) {
         // Backend expects LocalDate (yyyy-MM-dd) for deadline
         deadline = values.deadline.format('YYYY-MM-DD');
+        console.log('Formatted deadline:', deadline);
         
         // Backend expects String (HH:mm) for deadlineTime
         if (deadlineTime) {
           deadlineTimeValue = deadlineTime.format('HH:mm');
+          console.log('Formatted deadline time:', deadlineTimeValue);
         }
       }
 
@@ -71,15 +131,58 @@ function CreateTask() {
 
       console.log('Creating task with data:', taskData);
       const response = await taskApi.createTask(taskData);
-      console.log('Task created successfully:', response.data);
+      console.log('Task created successfully:', response);
+      console.log('Task creation response status:', response.status);
+      console.log('Task creation response data:', response.data);
+      console.log('Task creation response headers:', response.headers);
+      
+      // Extract task ID from response if available
+      let createdTaskId = null;
+      if (response.data?.data?.id) {
+        createdTaskId = response.data.data.id;
+        console.log('Task ID from response.data.data.id:', createdTaskId);
+      } else if (response.data?.id) {
+        createdTaskId = response.data.id;
+        console.log('Task ID from response.data.id:', createdTaskId);
+      } else if (response.data) {
+        createdTaskId = response.data.id || response.data.taskId;
+        console.log('Task ID from response.data:', createdTaskId);
+      }
+      
+      console.log('Final extracted task ID:', createdTaskId);
       
       // Success message and navigation
-      setTimeout(() => {
-        navigate('/tasks');
-      }, 500);
+      if (createdTaskId) {
+        console.log('✅ Task created successfully with ID:', createdTaskId);
+        console.log('✅ Navigating to task detail page:', `/tasks/${createdTaskId}`);
+        setTimeout(() => {
+          navigate(`/tasks/${createdTaskId}`);
+        }, 500);
+      } else {
+        console.log('⚠️ No task ID found in response, navigating to tasks list');
+        console.log('⚠️ Full response structure:', JSON.stringify(response, null, 2));
+        setTimeout(() => {
+          navigate('/tasks');
+        }, 500);
+      }
     } catch (err) {
-      console.error('Error creating task:', err);
-      setError(err.response?.data?.error || err.response?.data?.message || 'Error creating task');
+      console.error('❌ Error creating task:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error status:', err.response?.status);
+      console.error('❌ Error data:', err.response?.data);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Full error object:', JSON.stringify(err, null, 2));
+      
+      let errorMessage = 'Error creating task';
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -146,15 +249,66 @@ function CreateTask() {
                   </Select>
                 </Form.Item>
 
-                <Form.Item
-                  label="Assign To"
-                  name="assignedToId"
-                  rules={[{ required: true, message: 'Please select a team member' }]}
+                <Form.Item 
+                  label={
+                    <Space>
+                      <span>Assign To</span>
+                      <Tag color="blue" style={{ fontSize: '11px' }}>
+                        {users.length} team members
+                      </Tag>
+                    </Space>
+                  }
+                  name="assignedToId" 
+                  rules={[{ required: false, message: 'Please select a team member' }]}
                 >
-                  <Select placeholder="Select team member">
-                    {users.map(user => (
+                  <Select 
+                    placeholder="Select team member (all active members)" 
+                    showSearch
+                    loading={usersLoading}
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
+                    size="large"
+                    notFoundContent={
+                      usersLoading ? (
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                          <Spin size="small" />
+                          <div style={{ marginTop: '8px', color: '#999' }}>
+                            Loading team members...
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                          <div style={{ fontSize: '24px', color: '#ccc' }}>👥</div>
+                          <div style={{ marginTop: '8px', color: '#999' }}>
+                            No team members found
+                          </div>
+                        </div>
+                      )
+                    }
+                  >
+                    <Select.Option value={null}>
+                      <Space>
+                        <span style={{ color: '#999' }}>Unassigned</span>
+                      </Space>
+                    </Select.Option>
+                    {users.map((user) => (
                       <Select.Option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName}
+                        <Space>
+                          <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
+                            {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                          </Avatar>
+                          <div>
+                            <div style={{ fontWeight: 500 }}>
+                              {user.firstName} {user.lastName}
+                            </div>
+                            {user.jobTitle && (
+                              <div style={{ fontSize: '11px', color: '#999' }}>
+                                {user.jobTitle}
+                              </div>
+                            )}
+                          </div>
+                        </Space>
                       </Select.Option>
                     ))}
                   </Select>
@@ -167,15 +321,30 @@ function CreateTask() {
                 >
                   <Row gutter={8}>
                     <Col span={16}>
-                      <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                      <DatePicker 
+                        style={{ width: '100%' }} 
+                        format="DD/MM/YYYY"
+                        onChange={(date) => {
+                          console.log('Deadline date changed:', date);
+                          form.setFieldsValue({ deadline: date });
+                        }}
+                      />
                     </Col>
                     <Col span={8}>
                       <TimePicker 
                         style={{ width: '100%' }} 
                         placeholder="Select time"
-                        value={deadlineTime}
-                        onChange={(time) => setDeadlineTime(time)}
+                        value={deadlineTime || null}
+                        onChange={(time) => {
+                          console.log('Deadline time changed:', time);
+                          console.log('Deadline time format:', time ? time.format('HH:mm') : null);
+                          setDeadlineTime(time);
+                        }}
                         format="HH:mm"
+                        allowClear={true}
+                        showNow={false}
+                        use12Hours={false}
+                        hourFormat="24"
                       />
                     </Col>
                   </Row>

@@ -1,5 +1,7 @@
 package com.taskmanager.entity;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.taskmanager.deserializer.MeetingTypeDeserializer;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -22,6 +24,7 @@ public class Meeting {
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @JsonDeserialize(using = MeetingTypeDeserializer.class)
     @Column(nullable = false)
     private MeetingType meetingType;
 
@@ -62,10 +65,27 @@ public class Meeting {
     private LocalDateTime updatedAt;
 
     public enum MeetingType {
-        GOOGLE_MEET,
+        ZOOM_MEET,
+        GOOGLE_MEET, // Keep for backward compatibility during transition
         VIDEO_CALL,
         PHONE_CALL,
-        IN_PERSON
+        IN_PERSON;
+        
+        // Helper method to convert old values to new ones
+        public static MeetingType fromString(String value) {
+            if (value == null) return null;
+            
+            // Handle backward compatibility
+            if ("GOOGLE_MEET".equals(value)) {
+                return ZOOM_MEET; // Convert old Google Meet to Zoom Meet
+            }
+            
+            try {
+                return MeetingType.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
     }
 
     public enum MeetingStatus {

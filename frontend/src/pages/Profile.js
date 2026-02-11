@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Card, Form, Input, Button, Spin, Alert, Upload, Space, Row, Col, Divider, Tabs } from 'antd';
-import { UserOutlined, MailOutlined, CameraOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, CameraOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import userApi from '../api/userApi';
 import authApi from '../api/authApi';
 
@@ -23,6 +23,7 @@ function Profile() {
         lastName: currentUser.lastName,
         email: currentUser.email,
         gmailId: currentUser.gmailId,
+        phoneNumber: currentUser.phoneNumber,
       });
     }
   }, [currentUser, form]);
@@ -36,6 +37,7 @@ function Profile() {
       await userApi.updateUser(currentUser.id, {
         firstName: values.firstName,
         lastName: values.lastName,
+        phoneNumber: values.phoneNumber,
       });
 
       setSuccess(true);
@@ -117,6 +119,17 @@ function Profile() {
                   rules={[{ required: true, message: 'Please enter last name' }]}
                 >
                   <Input prefix={<UserOutlined />} />
+                </Form.Item>
+
+                <Form.Item
+                  label="Phone Number"
+                  name="phoneNumber"
+                  rules={[
+                    { required: true, message: 'Please enter phone number' },
+                    { pattern: /^[0-9]{10}$/, message: 'Phone number must be 10 digits' }
+                  ]}
+                >
+                  <Input prefix={<PhoneOutlined />} placeholder="Enter 10-digit phone number" />
                 </Form.Item>
 
                 <Form.Item

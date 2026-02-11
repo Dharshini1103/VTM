@@ -189,17 +189,37 @@ public class VoiceCommandService {
     }
 
     private String extractTaskTitle(String text) {
-        // Look for patterns like "create task called X" or "new task X"
-        Pattern titlePattern = Pattern.compile("(?:task called|create task|new task|task named)\\s+[\"']?([^\"'\\.]+)[\"']?", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = titlePattern.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
+        // Enhanced patterns for task title extraction
+        Pattern[] titlePatterns = {
+            Pattern.compile("(?:task called|create task|new task|task named)\\s+[\"']?([^\"'\\.]+)[\"']?", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("(?:create|add|make)\\s+(?:a\\s+)?task\\s+[\"']?([^\"'\\.]+)[\"']?", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("(?:title|name)\\s+(?:is|:)\\s+[\"']?([^\"'\\.]+)[\"']?", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("^\\s*([^.!]*task[^.!]*)", Pattern.CASE_INSENSITIVE) // First sentence containing "task"
+        };
+        
+        for (Pattern pattern : titlePatterns) {
+            Matcher matcher = pattern.matcher(text);
+            if (matcher.find()) {
+                String title = matcher.group(1).trim();
+                // Remove common keywords from title
+                title = title.replaceAll("(?:task|called|named|create|new|add)", "").trim();
+                if (!title.isEmpty()) {
+                    return title;
+                }
+            }
         }
         
-        // Fallback: look for first sentence or phrase
-        String[] sentences = text.split("\\.|\\!|\\?");
-        if (sentences.length > 0) {
-            return sentences[0].trim();
+        // Fallback: extract main subject before any field keywords
+        String[] fieldKeywords = {"priority", "assign", "due", "deadline", "description", "status", "complete", "finish"};
+        String[] parts = text.split("(?=" + String.join("|", fieldKeywords) + ")");
+        if (parts.length > 0) {
+            String title = parts[0].trim()
+                .replaceAll("(?:create|add|make|new|a|the|task)", "")
+                .replaceAll("[^a-zA-Z0-9\\s]", "")
+                .trim();
+            if (!title.isEmpty() && title.length() > 2) {
+                return title;
+            }
         }
         
         return "New Task";

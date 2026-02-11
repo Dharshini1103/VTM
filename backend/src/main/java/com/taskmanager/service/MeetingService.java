@@ -2,6 +2,7 @@ package com.taskmanager.service;
 
 import com.taskmanager.dto.MeetingDTO;
 import com.taskmanager.dto.request.MeetingRequest;
+import com.taskmanager.service.ZoomMeetingService;
 import com.taskmanager.entity.Meeting;
 import com.taskmanager.entity.User;
 import com.taskmanager.repository.MeetingRepository;
@@ -30,11 +31,64 @@ public class MeetingService {
     private UserRepository userRepository;
 
     @Autowired
-    private GoogleCalendarService googleCalendarService;
+    private ZoomMeetingService zoomMeetingService;
 
     public List<MeetingDTO> getAllMeetings() {
         List<Meeting> meetings = meetingRepository.findAll();
         return meetings.stream()
+                .map(MeetingDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public List<MeetingDTO> getAllMeetingsWithParticipantInfo(Long currentUserId) {
+        List<Meeting> meetings = meetingRepository.findAll();
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return meetings.stream()
+                .map(meeting -> {
+                    MeetingDTO dto = MeetingDTO.fromEntity(meeting);
+                    // Check if current user is a participant (creator or attendee)
+                    boolean isParticipant = meeting.getCreatedBy().getId().equals(currentUserId) ||
+                            (meeting.getAttendees() != null && 
+                             meeting.getAttendees().stream().anyMatch(attendee -> attendee.getId().equals(currentUserId)));
+                    dto.setCanJoin(isParticipant);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public boolean canUserJoinMeeting(Long meetingId, Long userId) {
+        Meeting meeting = meetingRepository.findById(meetingId)
+                .orElseThrow(() -> new RuntimeException("Meeting not found"));
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // User can join if they are the creator or an attendee
+        boolean isCreator = meeting.getCreatedBy().getId().equals(userId);
+        boolean isAttendee = meeting.getAttendees() != null && 
+                             meeting.getAttendees().stream().anyMatch(attendee -> attendee.getId().equals(userId));
+        
+        return isCreator || isAttendee;
+    }
+
+    public List<MeetingDTO> getMeetingsForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Get meetings where user is either creator or attendee
+        List<Meeting> createdMeetings = meetingRepository.findByCreatedBy(user);
+        List<Meeting> attendedMeetings = meetingRepository.findByAttendeesContaining(user);
+        
+        // Combine both lists and remove duplicates
+        List<Meeting> allMeetings = new ArrayList<>();
+        allMeetings.addAll(createdMeetings);
+        allMeetings.addAll(attendedMeetings);
+        
+        // Remove duplicates based on meeting ID
+        return allMeetings.stream()
+                .distinct()
                 .map(MeetingDTO::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -58,6 +112,11 @@ public class MeetingService {
         meeting.setEndDateTime(request.getEndDateTime());
         meeting.setStatus(Meeting.MeetingStatus.SCHEDULED);
         meeting.setCreatedBy(createdBy);
+        
+        // Set meetLink if provided
+        String meetLink = request.getMeetLink();
+        logger.info("Setting meetLink for meeting: {} - Link: {}", request.getTitle(), meetLink);
+        meeting.setMeetLink(meetLink);
 
         // Add attendees if provided
         if (request.getAttendeeIds() != null && !request.getAttendeeIds().isEmpty()) {
@@ -78,6 +137,30 @@ public class MeetingService {
         return MeetingDTO.fromEntity(savedMeeting);
     }
 
+    public MeetingDTO scheduleZoomMeet(MeetingRequest request, Long createdByUserId) {
+        logger.info("Scheduling Zoom meeting: {} by user: {}", request.getTitle(), createdByUserId);
+
+        // First create the meeting
+        MeetingDTO meeting = scheduleMeeting(request, createdByUserId);
+
+        try {
+            // Sync with Zoom and get meet link
+            String meetLink = zoomMeetingService.createZoomMeetingEvent(meeting);
+            
+            // Update meeting with Zoom link
+            Meeting meetingEntity = meetingRepository.findById(meeting.getId())
+                    .orElseThrow(() -> new RuntimeException("Meeting not found after creation"));
+            meetingEntity.setMeetLink(meetLink);
+            meetingEntity = meetingRepository.save(meetingEntity);
+
+            logger.info("Zoom meeting link generated: {}", meetLink);
+            return MeetingDTO.fromEntity(meetingEntity);
+        } catch (Exception e) {
+            logger.error("Failed to generate Zoom meeting link", e);
+            throw new RuntimeException("Failed to generate Zoom meeting link: " + e.getMessage());
+        }
+    }
+
     public MeetingDTO scheduleGoogleMeet(MeetingRequest request, Long createdByUserId) {
         logger.info("Scheduling Google Meet: {} by user: {}", request.getTitle(), createdByUserId);
 
@@ -86,7 +169,7 @@ public class MeetingService {
 
         try {
             // Sync with Google Calendar and get meet link
-            String meetLink = googleCalendarService.createGoogleMeetEvent(meeting);
+            String meetLink = zoomMeetingService.createZoomMeetingEvent(meeting);
             
             // Update meeting with Google Meet link
             Meeting meetingEntity = meetingRepository.findById(meeting.getId())
@@ -140,7 +223,7 @@ public class MeetingService {
         // Delete from Google Calendar if synced
         if (meeting.getGoogleCalendarEventId() != null) {
             try {
-                googleCalendarService.deleteCalendarEvent(meeting.getGoogleCalendarEventId());
+                zoomMeetingService.deleteCalendarEvent(meeting.getGoogleCalendarEventId());
             } catch (Exception e) {
                 logger.warn("Failed to delete event from Google Calendar: {}", e.getMessage());
             }
@@ -159,11 +242,11 @@ public class MeetingService {
         try {
             if (meeting.getGoogleCalendarEventId() == null) {
                 // Create new event in Google Calendar
-                String eventId = googleCalendarService.createCalendarEvent(meeting);
+                String eventId = zoomMeetingService.createCalendarEvent(meeting);
                 meeting.setGoogleCalendarEventId(eventId);
             } else {
                 // Update existing event
-                googleCalendarService.updateCalendarEvent(meeting.getGoogleCalendarEventId(), meeting);
+                zoomMeetingService.updateCalendarEvent(meeting.getGoogleCalendarEventId(), meeting);
             }
 
             Meeting updatedMeeting = meetingRepository.save(meeting);

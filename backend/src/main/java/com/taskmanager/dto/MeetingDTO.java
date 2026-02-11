@@ -21,6 +21,7 @@ public class MeetingDTO {
     private UserDTO createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean canJoin; // Field to indicate if current user can join this meeting
 
     // Default constructor
     public MeetingDTO() {
@@ -74,6 +75,9 @@ public class MeetingDTO {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
+    public Boolean getCanJoin() { return canJoin; }
+    public void setCanJoin(Boolean canJoin) { this.canJoin = canJoin; }
+
     public static MeetingDTO fromEntity(Meeting meeting) {
         if (meeting == null) {
             return null;
@@ -93,6 +97,14 @@ public class MeetingDTO {
                 .collect(Collectors.toList()) : new ArrayList<>());
         dto.setGoogleCalendarEventId(meeting.getGoogleCalendarEventId());
         dto.setMeetLink(meeting.getMeetLink());
+        
+        // Debug logging for meetLink
+        System.out.println("=== MEETING DTO DEBUG ===");
+        System.out.println("Meeting ID: " + meeting.getId());
+        System.out.println("Meeting Title: " + meeting.getTitle());
+        System.out.println("MeetLink: " + meeting.getMeetLink());
+        System.out.println("DTO MeetLink: " + dto.getMeetLink());
+        System.out.println("========================");
         dto.setCreatedBy(meeting.getCreatedBy() != null ? UserDTO.fromEntity(meeting.getCreatedBy()) : null);
         dto.setCreatedAt(meeting.getCreatedAt());
         dto.setUpdatedAt(meeting.getUpdatedAt());

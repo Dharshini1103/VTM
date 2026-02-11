@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   Card, Row, Col, Avatar, Tag, Button, Space, Tooltip, 
   Form, Input, DatePicker, Modal, Radio, message, Spin,
-  Select, Typography, Divider, Badge
+  Select, Typography, Divider, Badge, Table
 } from 'antd';
 import { 
   UserOutlined, GoogleOutlined, MailOutlined, PhoneOutlined,
@@ -14,11 +15,23 @@ import dayjs from 'dayjs';
 import meetingApi from '../api/meetingApi';
 import userApi from '../api/userApi';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 const { Option } = Select;
 const { Search } = Input;
 
-function ImageBasedTeamMembers({ users, onScheduleCall }) {
+function ImageBasedTeamMembers({ users, onScheduleCall, meetings }) {
+  console.log('=== TEAM MEMBERS COMPONENT DEBUG ===');
+  console.log('Users prop received:', users);
+  console.log('Users prop length:', users?.length || 0);
+  console.log('Users prop type:', typeof users);
+  console.log('Is users an array?', Array.isArray(users));
+  
+  // Get current user role from Redux state
+  const currentUser = useSelector((state) => state.auth.user);
+  const userRole = currentUser?.role || 'USER';
+  console.log('Current user role:', userRole);
+  console.log('Current user:', currentUser);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -26,21 +39,52 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
   const [callForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  const departments = [...new Set(users.map(user => user.department).filter(Boolean))];
+  // Ensure users is always an array
+  const safeUsers = Array.isArray(users) ? users : [];
+  console.log('Safe users after array check:', safeUsers);
+  console.log('Safe users length:', safeUsers.length);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const departments = [...new Set(safeUsers.map(user => user.department).filter(Boolean))];
+  console.log('Departments:', departments);
+
+  const filteredUsers = safeUsers.filter(user => {
+    const matchesSearch = user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDepartment = filterDepartment === 'all' || user.department === filterDepartment;
-    return matchesSearch && matchesDepartment;
+    
+    // TEMPORARY: Show all users regardless of active status for debugging
+    const showAll = true; // Set to false to filter active users only
+    const matchesActive = showAll || user.isActive !== false;
+    
+    const passesFilter = matchesSearch && matchesDepartment && matchesActive;
+    
+    console.log(`Filtering user ${user.firstName} ${user.lastName}:`, {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      matchesSearch,
+      matchesDepartment,
+      matchesActive,
+      passesFilter,
+      searchTerm,
+      filterDepartment
+    });
+    
+    return passesFilter;
   });
+  
+  console.log('=== FILTERING RESULTS ===');
+  console.log('Total safe users:', safeUsers.length);
+  console.log('Filtered users:', filteredUsers.length);
+  console.log('Filtered users list:', filteredUsers.map(u => `${u.firstName} ${u.lastName} (${u.role})`));
 
   const handleScheduleCall = async (user, callType) => {
     setSelectedUser(user);
     callForm.setFieldsValue({
-      callType: 'GOOGLE_MEET',
-      title: `Google Meet with ${user.firstName} ${user.lastName}`
+      callType: 'ZOOM_CALL',
+      title: `Zoom Call with ${user.firstName} ${user.lastName}`
     });
     setIsCallModalVisible(true);
   };
@@ -52,44 +96,54 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
       // Create meeting data for API call
       const meetingData = {
         title: values.title,
-        description: values.description || 'Google Meet call',
-        meetingType: 'GOOGLE_MEET',
+        description: values.description || 'Zoom call',
+        meetingType: 'ZOOM_CALL',
         startDateTime: values.startDateTime.format('YYYY-MM-DDTHH:mm:ss'),
         endDateTime: values.endDateTime.format('YYYY-MM-DDTHH:mm:ss'),
         attendeeIds: [selectedUser.id],
         teamIds: []
       };
 
-      // Make actual API call to schedule meeting
-      const response = await meetingApi.createMeeting(meetingData);
-      
+      console.log('=== SCHEDULING CALL ===');
+      console.log('Selected user:', selectedUser);
+      console.log('Meeting data:', meetingData);
+
+      // Make actual API call to schedule Zoom meeting
+      const response = await meetingApi.scheduleZoomMeet(meetingData);
+        
+      console.log('API Response:', response);
+        
       if (response.data && response.data.success) {
         const createdMeeting = response.data.data;
-        
+          
         message.success({
-          content: 'Google Meet scheduled successfully!',
-          description: createdMeeting.meetLink ? 'Meeting link is ready' : 'Meeting will be synced with Google Calendar',
+          content: 'Zoom Call scheduled successfully!',
+          description: createdMeeting.meetLink ? 'Meeting link is ready' : 'Meeting will be synced with Zoom',
           duration: 3
         });
-        
+          
         setIsCallModalVisible(false);
         callForm.resetFields();
         setSelectedUser(null);
-        
+          
         if (onScheduleCall) {
           onScheduleCall(createdMeeting);
         }
       } else {
-        throw new Error(response.data?.message || 'Failed to create meeting');
+        console.error('API Error:', response);
+        message.error({
+          content: 'Failed to schedule call',
+          description: response.data?.error || 'Unknown error occurred',
+          duration: 5
+        });
       }
     } catch (error) {
-      console.error('Failed to schedule Google Meet:', error);
+      console.error('Schedule Call Error:', error);
       message.error({
-        content: 'Failed to schedule Google Meet',
-        description: error.response?.data?.error || error.message || 'Please try again',
-        duration: 4
+        content: 'Failed to schedule call',
+        description: error.message || 'Network error occurred',
+        duration: 5
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -108,118 +162,105 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
 
   return (
     <div className="image-based-team-members">
-      <div className="team-header">
-        <div className="team-title">
-          <Title level={4} style={{ margin: 0 }}>
-            <TeamOutlined /> Team Members
-          </Title>
-          <Text type="secondary">
-            {filteredUsers.length} members available
-          </Text>
-        </div>
-        <div className="team-actions">
-          <Space>
-            <Search
-              placeholder="Search team members..."
-              allowClear
-              style={{ width: 250 }}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Select
-              value={filterDepartment}
-              onChange={setFilterDepartment}
-              style={{ width: 150 }}
-              placeholder="Department"
-            >
-              <Option value="all">All Departments</Option>
-              {departments.map(dept => (
-                <Option key={dept} value={dept}>{dept}</Option>
-              ))}
-            </Select>
-            <Button type="primary" icon={<PlusOutlined />}>
-              Add Member
-            </Button>
-          </Space>
-        </div>
+      <div className="team-header" style={{ marginBottom: '24px' }}>
+        <Title level={3} style={{ margin: 0 }}>Team Members</Title>
+        <Typography.Text type="secondary">Manage your team and schedule calls</Typography.Text>
       </div>
 
       <Row gutter={[16, 16]} className="team-grid">
-        {filteredUsers.map(user => (
-          <Col xs={24} sm={12} md={8} lg={6} key={user.id}>
-            <Card
-              className="team-member-card"
-              hoverable
-              actions={[
-                <Tooltip title="Schedule Google Meet">
-                  <GoogleOutlined 
-                    key="meet"
-                    onClick={() => handleScheduleCall(user, 'GOOGLE_MEET')}
-                  />
-                </Tooltip>,
-                <MoreOutlined key="more" />
-              ]}
-            >
-              <Card.Meta
-                avatar={
-                  <Avatar 
-                    size={64} 
-                    style={{ 
-                      backgroundColor: '#1890ff',
-                      fontSize: '24px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                  </Avatar>
-                }
-                title={
-                  <div>
-                    <Text strong style={{ fontSize: '16px' }}>
-                      {user.firstName} {user.lastName}
-                    </Text>
-                    <div style={{ marginTop: 4 }}>
-                      {getStatusBadge('online')}
-                    </div>
-                  </div>
-                }
-                description={
-                  <div>
-                    <div style={{ marginBottom: 8 }}>
-                      <Text type="secondary" style={{ fontSize: '14px' }}>
-                        {user.jobTitle}
-                      </Text>
-                    </div>
-                    <div style={{ marginBottom: 8 }}>
-                      <Space>
-                        <MailOutlined style={{ color: '#666' }} />
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {user.email}
-                        </Text>
-                      </Space>
-                    </div>
-                    {user.department && (
-                      <div style={{ marginBottom: 8 }}>
-                        <Tag color="blue" style={{ fontSize: '12px' }}>
-                          {user.department}
-                        </Tag>
-                      </div>
-                    )}
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map(user => (
+            <Col xs={24} sm={12} md={8} lg={6} key={user.id}>
+              <Card
+                className="team-member-card"
+                hoverable
+                actions={[
+                  ...(userRole === 'ADMIN' || userRole === 'MANAGER' ? [
+                    <Tooltip title="Schedule Zoom Call">
+                      <VideoCameraOutlined 
+                        key="zoom"
+                        onClick={() => handleScheduleCall(user, 'ZOOM_CALL')}
+                      />
+                    </Tooltip>
+                  ] : []),
+                  <MoreOutlined key="more" />
+                ]}
+              >
+                <Card.Meta
+                  avatar={
+                    <Avatar 
+                      size={64} 
+                      style={{ 
+                        backgroundColor: '#1890ff',
+                        fontSize: '24px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                    </Avatar>
+                  }
+                  title={
                     <div>
-                      <Button 
-                        type="primary" 
-                        size="small"
-                        icon={<GoogleOutlined />}
-                        onClick={() => handleScheduleCall(user, 'GOOGLE_MEET')}
-                      >
-                        Google Meet
-                      </Button>
+                      <Typography.Text strong style={{ fontSize: '16px' }}>
+                        {user.firstName} {user.lastName}
+                      </Typography.Text>
+                      <div style={{ marginTop: 4 }}>
+                        {getStatusBadge('online')}
+                      </div>
                     </div>
-                  </div>
+                  }
+                  description={
+                    <div>
+                      <div style={{ marginBottom: 8 }}>
+                        <Typography.Text type="secondary" style={{ fontSize: '14px' }}>
+                          {user.jobTitle || 'Team Member'}
+                        </Typography.Text>
+                      </div>
+                      <div style={{ marginBottom: 8 }}>
+                        <Space>
+                          <MailOutlined style={{ color: '#666' }} />
+                          <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                            {user.email}
+                          </Typography.Text>
+                        </Space>
+                      </div>
+                      {user.department && (
+                        <div style={{ marginBottom: 8 }}>
+                          <Tag color="blue" style={{ fontSize: '12px' }}>
+                            {user.department}
+                          </Tag>
+                        </div>
+                      )}
+                      <div>
+                        {(userRole === 'ADMIN' || userRole === 'MANAGER') && (
+                          <Button 
+                            type="primary" 
+                            size="small"
+                            icon={<VideoCameraOutlined />}
+                            onClick={() => handleScheduleCall(user, 'ZOOM_CALL')}
+                          >
+                            Zoom Call
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  }
+                />
+              </Card>
+            </Col>
+          ))
+        ) : (
+          <Col span={24}>
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Typography.Text type="secondary">
+                {searchTerm || filterDepartment !== 'all' 
+                  ? 'No team members found matching your filters'
+                  : 'No team members available'
                 }
-              />
-            </Card>
+              </Typography.Text>
+            </div>
           </Col>
-        ))}
+        )}
       </Row>
 
       {/* Schedule Call Modal */}
@@ -246,8 +287,8 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
             rules={[{ required: true, message: 'Please select call type' }]}
           >
             <Radio.Group>
-              <Radio.Button value="GOOGLE_MEET">
-                <GoogleOutlined /> Google Meet
+              <Radio.Button value="ZOOM_CALL">
+                <VideoCameraOutlined /> Zoom Call
               </Radio.Button>
             </Radio.Group>
           </Form.Item>
@@ -268,7 +309,8 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
             label="Description"
             name="description"
           >
-            <Input.TextArea 
+            <Input 
+              type="textarea"
               rows={3} 
               placeholder="Enter call description"
               showCount
@@ -316,7 +358,7 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
                 htmlType="submit" 
                 loading={loading}
                 size="large"
-                icon={<CalendarOutlined />}
+                icon={<PhoneOutlined />}
               >
                 Schedule Call
               </Button>
@@ -327,6 +369,84 @@ function ImageBasedTeamMembers({ users, onScheduleCall }) {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Scheduled Individual Calls Table */}
+      <Card title="Scheduled Individual Calls with Team Members" style={{ marginTop: '24px' }}>
+        <Table
+          dataSource={(meetings || []).filter(meeting => 
+            meeting.attendeeIds && meeting.attendeeIds.length === 1 && 
+            (meeting.meetingType === 'PHONE_CALL' || meeting.meetingType === 'ZOOM_CALL')
+          )}
+          columns={[
+            { 
+              title: 'Team Member', 
+              dataIndex: 'attendeeName', 
+              key: 'attendeeName',
+              render: (text, record) => (
+                <Space>
+                  <Avatar size="small" icon={<UserOutlined />} />
+                  <span>{text || 'Unknown'}</span>
+                </Space>
+              )
+            },
+            { 
+              title: 'Meeting Title', 
+              dataIndex: 'title', 
+              key: 'title',
+              render: (text) => (
+                <Typography.Text strong>{text}</Typography.Text>
+              )
+            },
+            { 
+              title: 'Meeting Type', 
+              dataIndex: 'meetingType', 
+              key: 'meetingType',
+              render: (type) => (
+                <Tag color={type === 'ZOOM_CALL' ? 'blue' : 'green'}>
+                  {type === 'ZOOM_CALL' ? (
+                    <Space>
+                      <VideoCameraOutlined />
+                      Zoom Call
+                    </Space>
+                  ) : (
+                    <Space>
+                      <PhoneOutlined />
+                      Phone Call
+                    </Space>
+                  )}
+                </Tag>
+              )
+            },
+            { 
+              title: 'Date & Time', 
+              dataIndex: 'startDateTime', 
+              key: 'startDateTime',
+              render: (time) => (
+                <Typography.Text>{dayjs(time).format('YYYY-MM-DD HH:mm')}</Typography.Text>
+              )
+            },
+            { 
+              title: 'Status', 
+              dataIndex: 'status', 
+              key: 'status',
+              render: (status) => (
+                <Tag color={status === 'SCHEDULED' ? 'blue' : status === 'COMPLETED' ? 'green' : 'orange'}>
+                  {status}
+                </Tag>
+              )
+            }
+          ]}
+          pagination={{ 
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} meetings`
+          }}
+          rowKey="id"
+          locale={{
+            emptyText: 'No scheduled individual calls found'
+          }}
+        />
+      </Card>
     </div>
   );
 }

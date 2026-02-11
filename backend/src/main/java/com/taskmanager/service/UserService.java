@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -152,10 +153,44 @@ public class UserService {
     }
 
     public List<UserDTO> getAllTeamMembers() {
-        List<User> users = userRepository.findByIsActiveTrue();
-        return users.stream()
-                .map(UserDTO::fromEntity)
-                .collect(Collectors.toList());
+        // Return all users regardless of active status to ensure visibility
+        List<User> users = userRepository.findAll();
+        
+        // Debug logging to track all users from database
+        logger.info("=== GET ALL TEAM MEMBERS DEBUG ===");
+        logger.info("Total users found in database: {}", users.size());
+        
+        for (int i = 0; i < users.size(); i++) {
+            User user = users.get(i);
+            logger.info("User {}: id={}, firstName={}, lastName={}, email={}, role={}, isActive={}", 
+                i + 1, 
+                user.getId(), 
+                user.getFirstName(), 
+                user.getLastName(), 
+                user.getEmail(), 
+                user.getRole(), 
+                user.getIsActive()
+            );
+        }
+        
+        // Convert to DTO with detailed debugging
+        List<UserDTO> userDTOs = new ArrayList<>();
+        for (User user : users) {
+            try {
+                UserDTO dto = UserDTO.fromEntity(user);
+                userDTOs.add(dto);
+                logger.info("Successfully converted user to DTO: id={}, firstName={}, role={}", 
+                    dto.getId(), dto.getFirstName(), dto.getRole());
+            } catch (Exception e) {
+                logger.error("Failed to convert user to DTO: id={}, error={}", 
+                    user.getId(), e.getMessage(), e);
+            }
+        }
+        
+        logger.info("Total DTOs created: {}", userDTOs.size());
+        logger.info("=== END DEBUG ===");
+        
+        return userDTOs;
     }
 
     public List<UserDTO> getAllUsers() {
@@ -315,9 +350,9 @@ public class UserService {
         List<Task> createdByTasks = taskRepository.findByCreatedById(userId);
         List<Task> assignedToTasks = taskRepository.findByAssignedToId(userId);
         
-        // Handle tasks created by this user - set createdBy to null or reassign
+        // Handle tasks created by this user - reassign to current SUPER_ADMIN
         for (Task task : createdByTasks) {
-            task.setCreatedBy(null);
+            task.setCreatedBy(currentUser);
             taskRepository.save(task);
         }
         

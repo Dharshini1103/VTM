@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Form, Input, Select, Button, Card, Row, Col, DatePicker, TimePicker, Spin, Alert } from 'antd';
+import { Form, Input, Select, Button, Card, Row, Col, DatePicker, TimePicker, Spin, Alert, Avatar, Space, Tag } from 'antd';
 import dayjs from 'dayjs';
 import taskApi from '../api/taskApi';
 import userApi from '../api/userApi';
@@ -21,20 +21,103 @@ function EditTask() {
         setLoading(true);
         console.log('Loading task with ID:', taskId);
         
-        const [taskRes, usersRes] = await Promise.all([
-          taskApi.getTaskById(taskId),
-          userApi.getAllTeamMembers(),
-        ]);
+        // First try to get task data
+        let taskRes;
+        try {
+          taskRes = await taskApi.getTaskById(taskId);
+          console.log('Task response:', taskRes);
+          console.log('Task response status:', taskRes.status);
+          console.log('Task response data:', taskRes.data);
+        } catch (taskError) {
+          console.error('Error fetching task:', taskError);
+          console.error('Task error response:', taskError.response);
+          setError(`Failed to load task: ${taskError.response?.data?.message || taskError.message}`);
+          return;
+        }
         
-        console.log('Task response:', taskRes);
-        console.log('Task response data:', taskRes.data);
-        console.log('Task response structure:', JSON.stringify(taskRes, null, 2));
+        // Then try to get users - use the same method as meeting scheduler
+        let usersRes;
+        try {
+          console.log('Fetching all users (same as meeting scheduler)...');
+          usersRes = await userApi.getAllUsers();
+          console.log('Users response:', usersRes);
+          console.log('Users response status:', usersRes.status);
+          console.log('Users response data:', usersRes.data);
+        } catch (usersError) {
+          console.error('Error fetching users with getAllUsers:', usersError);
+          console.error('Users error response:', usersError.response);
+          console.error('Users error status:', usersError.response?.status);
+          console.error('Users error data:', usersError.response?.data);
+          
+          // Try getAllTeamMembers as fallback (same as meeting scheduler)
+          try {
+            console.log('Trying getAllTeamMembers as fallback...');
+            usersRes = await userApi.getAllTeamMembers();
+            console.log('Team members response:', usersRes);
+          } catch (teamError) {
+            console.error('Error fetching team members too:', teamError);
+            console.error('Team error response:', teamError.response);
+            // Continue with empty users if this fails
+            usersRes = { data: { data: [] } };
+          }
+        }
         
-        const task = taskRes.data?.data || taskRes.data || taskRes;
-        const users = usersRes.data?.data || usersRes.data || [];
+        // Try different ways to extract task data
+        let task = null;
+        if (taskRes.data?.data) {
+          task = taskRes.data.data;
+          console.log('Using taskRes.data.data');
+        } else if (taskRes.data) {
+          task = taskRes.data;
+          console.log('Using taskRes.data');
+        } else if (taskRes) {
+          task = taskRes;
+          console.log('Using taskRes directly');
+        }
         
-        console.log('Extracted task:', task);
-        console.log('Extracted users:', users);
+        // Use the same data extraction logic as meeting scheduler for users
+        let users = [];
+        if (usersRes.data && usersRes.data.success && usersRes.data.data) {
+          console.log('Using meeting scheduler data extraction logic for users');
+          users = usersRes.data.data;
+        } else if (usersRes.data && usersRes.data.data) {
+          console.log('Using direct data.data extraction for users');
+          users = usersRes.data.data;
+        } else if (usersRes.data) {
+          console.log('Using direct data extraction for users');
+          users = usersRes.data;
+        } else if (Array.isArray(usersRes)) {
+          console.log('Using direct array for users');
+          users = usersRes;
+        } else {
+          console.log('No users found, trying getAllTeamMembers as fallback...');
+          // Try fallback method
+          try {
+            const teamResponse = await userApi.getAllTeamMembers();
+            console.log('Team members fallback response:', teamResponse);
+            if (teamResponse.data && teamResponse.data.data) {
+              users = teamResponse.data.data;
+              console.log('Using team members fallback');
+            }
+          } catch (teamError) {
+            console.error('Team members fallback failed:', teamError);
+          }
+        }
+        
+        console.log('Final extracted users:', users);
+        console.log('Users array length:', users.length);
+        
+        // Debug: Show first few users if available
+        if (users.length > 0) {
+          console.log('First user:', users[0]);
+          console.log('Sample users:', users.slice(0, 3));
+        } else {
+          console.log('No users found - checking response structure');
+          console.log('Full usersRes:', JSON.stringify(usersRes, null, 2));
+        }
+        
+        console.log('Final extracted task:', task);
+        console.log('Final extracted users:', users);
         
         if (!task) {
           console.error('Task not found for ID:', taskId);
@@ -47,25 +130,40 @@ function EditTask() {
         
         // Ensure task data exists before setting form values
         if (task && typeof task === 'object') {
-          form.setFieldsValue({
+          console.log('📝 Setting form values with actual task data:', task);
+          
+          const formValues = {
             title: task.title || '',
             description: task.description || '',
             priority: task.priority || 'MEDIUM',
             status: task.status || 'PENDING',
             assignedToId: task.assignedToId || undefined,
             deadline: task.deadline ? dayjs(task.deadline) : null,
-          });
-          console.log('Form values set successfully');
+          };
+          
+          console.log('📋 Form values to be set:', formValues);
+          form.setFieldsValue(formValues);
+          console.log('✅ Form values set successfully with original task data');
         } else {
-          console.error('Invalid task data:', task);
+          console.error('❌ Invalid task data:', task);
           setError('Invalid task data received');
         }
         
         // Set time if task has deadlineTime (new backend field)
         if (task.deadlineTime) {
           console.log('Setting deadline time:', task.deadlineTime);
-          setDeadlineTime(dayjs(`2023-01-01T${task.deadlineTime}`));
+          // Parse the time string more reliably
+          const timeParts = task.deadlineTime.split(':');
+          const hours = parseInt(timeParts[0]) || 0;
+          const minutes = parseInt(timeParts[1]) || 0;
+          const timeValue = dayjs().hour(hours).minute(minutes).second(0).millisecond(0);
+          console.log('Parsed time value:', timeValue.format('HH:mm'));
+          setDeadlineTime(timeValue);
         }
+        
+        console.log('✅ Task data loaded successfully into form');
+        console.log('✅ Ready for user to edit task details');
+        
       } catch (err) {
         console.error('Error loading task:', err);
         console.error('Error details:', err.response?.data);
@@ -170,15 +268,70 @@ function EditTask() {
                 </Select>
                 </Form.Item>
 
-                <Form.Item label="Assign To" name="assignedToId" rules={[{ required: true, message: 'Please select a team member' }]}>
-                  <Select placeholder="Select team member" showSearch optionFilterProp="children">
-                    {users.map((user) => (
-                      <Select.Option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName}
+                <Form.Item 
+                    label={
+                      <Space>
+                        <span>Assign To</span>
+                        <Tag color="blue" style={{ fontSize: '11px' }}>
+                          {users.length} team members
+                        </Tag>
+                      </Space>
+                    } 
+                    name="assignedToId" 
+                    rules={[{ required: false, message: 'Please select a team member' }]}
+                  >
+                    <Select 
+                      placeholder="Select team member (all active members)" 
+                      showSearch
+                      loading={loading}
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      }
+                      size="large"
+                      notFoundContent={
+                        loading ? (
+                          <div style={{ textAlign: 'center', padding: '20px' }}>
+                            <Spin size="small" />
+                            <div style={{ marginTop: '8px', color: '#999' }}>
+                              Loading team members...
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '20px' }}>
+                            <div style={{ fontSize: '24px', color: '#ccc' }}>👥</div>
+                            <div style={{ marginTop: '8px', color: '#999' }}>
+                              No team members found
+                            </div>
+                          </div>
+                        )
+                      }
+                    >
+                      <Select.Option value={null}>
+                        <Space>
+                          <span style={{ color: '#999' }}>Unassigned</span>
+                        </Space>
                       </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
+                      {users.map((user) => (
+                        <Select.Option key={user.id} value={user.id}>
+                          <Space>
+                            <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
+                              {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                            </Avatar>
+                            <div>
+                              <div style={{ fontWeight: 500 }}>
+                                {user.firstName} {user.lastName}
+                              </div>
+                              {user.jobTitle && (
+                                <div style={{ fontSize: '11px', color: '#999' }}>
+                                  {user.jobTitle}
+                                </div>
+                              )}
+                            </div>
+                          </Space>
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
 
                 <Form.Item label="Deadline" name="deadline" rules={[{ required: true, message: 'Please select deadline' }]}>
                   <Row gutter={8}>
@@ -189,9 +342,17 @@ function EditTask() {
                       <TimePicker 
                         style={{ width: '100%' }} 
                         placeholder="Select time"
-                        value={deadlineTime}
-                        onChange={(time) => setDeadlineTime(time)}
+                        value={deadlineTime || null}
+                        onChange={(time) => {
+                          console.log('Edit form deadline time changed:', time);
+                          console.log('Edit form deadline time format:', time ? time.format('HH:mm') : null);
+                          setDeadlineTime(time);
+                        }}
                         format="HH:mm"
+                        allowClear={true}
+                        showNow={false}
+                        use12Hours={false}
+                        hourFormat="24"
                       />
                     </Col>
                   </Row>

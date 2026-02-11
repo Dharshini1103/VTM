@@ -46,44 +46,15 @@ function Tasks() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  // Debug: Monitor tasks state changes
-  useEffect(() => {
-    console.log('=== TASKS STATE CHANGED ===');
-    console.log('Current tasks state:', tasks);
-    console.log('Tasks length:', tasks.length);
-    console.log('Tasks array:', JSON.stringify(tasks));
-    console.log('=== TASKS STATE END ===');
-  }, [tasks]);
-
   const fetchTasks = async () => {
     try {
-      console.log('=== FETCH TASKS START ===');
-      console.log('Current user:', currentUser);
       setLoading(true);
-      console.log('Making API call to getAllTasks...');
-      
       const response = await taskApi.getAllTasks();
-      console.log('=== FETCH RESPONSE ===');
-      console.log('Full response:', response);
-      console.log('Response status:', response?.status);
-      console.log('Response data:', response?.data);
-      console.log('Tasks array:', response?.data?.data);
-      console.log('Number of tasks:', response?.data?.data?.length || 0);
-      
       const tasksArray = response?.data?.data || [];
-      console.log('Tasks array to set:', tasksArray);
-      console.log('Tasks array length:', tasksArray.length);
-      
       setTasks(tasksArray);
-      console.log('Tasks set in React state');
-      console.log('=== FETCH TASKS END ===');
     } catch (error) {
-      console.log('=== FETCH ERROR ===');
       console.error('Error fetching tasks:', error);
-      console.error('Error response:', error?.response);
-      console.error('Error status:', error?.response?.status);
-      console.error('Error data:', error?.response?.data);
-      console.error('Error message:', error?.message);
+      message.error('Failed to load tasks');
     } finally {
       setLoading(false);
     }
@@ -834,16 +805,27 @@ function Tasks() {
       title: 'Deadline',
       dataIndex: 'deadline',
       key: 'deadline',
-      width: '15%',
-      render: (deadline) => {
+      width: '20%',
+      render: (deadline, record) => {
         if (!deadline) return '-';
         const date = new Date(deadline);
         const today = new Date();
         const isOverdue = date < today && deadline.indexOf(today.toISOString().split('T')[0]) === -1;
+        
+        const dateStr = date.toLocaleDateString();
+        const timeStr = record.deadlineTime || '';
+        
         return (
-          <span style={{ color: isOverdue ? '#ff4d4f' : 'inherit', fontWeight: isOverdue ? '600' : 'normal' }}>
-            {date.toLocaleDateString()}
-          </span>
+          <div>
+            <span style={{ color: isOverdue ? '#ff4d4f' : 'inherit', fontWeight: isOverdue ? '600' : 'normal' }}>
+              {dateStr}
+            </span>
+            {timeStr && (
+              <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
+                {timeStr}
+              </span>
+            )}
+          </div>
         );
       },
     },
@@ -980,39 +962,27 @@ function Tasks() {
       {/* Tasks Table */}
       <div className="task-table-container animate-fade-in-up">
         <Spin spinning={loading} tip="Loading tasks...">
-          {(() => {
-            console.log('=== TABLE RENDERING ===');
-            console.log('Original tasks:', tasks);
-            console.log('Filtered tasks:', filteredTasks);
-            console.log('Search text:', searchText);
-            console.log('Priority filter:', filterPriority);
-            console.log('Status filter:', filterStatus);
-            console.log('=== TABLE RENDERING END ===');
-            
-            return (
-              <Table
-                columns={columns}
-                dataSource={filteredTasks.map((task, index) => ({ ...task, key: task.id }))}
-                rowKey="id"
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showTotal: (total) => `Showing ${total} tasks`,
-                  pageSizeOptions: ['5', '10', '20', '50'],
-                }}
-                bordered={false}
-                size="middle"
-                style={{ background: 'transparent' }}
-              />
-            );
-          })()}
+          <Table
+            columns={columns}
+            dataSource={filteredTasks.map((task, index) => ({ ...task, key: task.id }))}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `Showing ${total} tasks`,
+              pageSizeOptions: ['5', '10', '20', '50'],
+            }}
+            bordered={false}
+            size="middle"
+            style={{ background: 'transparent' }}
+          />
         </Spin>
       </div>
 
       {/* Voice Command Help Modal */}
       <Modal
         title="Voice Commands Guide"
-        visible={false}
+        open={false}
         onCancel={() => {}}
         onOk={() => {}}
         footer={null}

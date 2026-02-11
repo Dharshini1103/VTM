@@ -14,11 +14,21 @@ const STORAGE_KEYS = {
 const storageManager = {
   // Auth Token Management
   setAuthToken: (token) => {
+    console.log('=== STORAGE MANAGER SET TOKEN ===');
+    console.log('Token to store:', token);
+    console.log('Token length:', token ? token.length : 'null');
     localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    console.log('Token stored in localStorage:', localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN));
+    console.log('=== STORAGE MANAGER SET TOKEN END ===');
   },
 
   getAuthToken: () => {
-    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    console.log('=== STORAGE MANAGER GET TOKEN ===');
+    console.log('Token retrieved from localStorage:', token);
+    console.log('Token length:', token ? token.length : 'null');
+    console.log('=== STORAGE MANAGER GET TOKEN END ===');
+    return token;
   },
 
   removeAuthToken: () => {

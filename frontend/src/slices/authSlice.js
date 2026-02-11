@@ -21,12 +21,24 @@ const authSlice = createSlice({
       state.error = null;
     },
     loginSuccess: (state, action) => {
+      console.log('=== LOGIN SUCCESS REDUCER ===');
+      console.log('Action payload:', action.payload);
+      console.log('Token being stored:', action.payload.token);
+      console.log('User being stored:', action.payload.user);
+      
       state.isAuthenticated = true;
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.loading = false;
+      
+      console.log('Calling storageManager.setAuthToken with token:', action.payload.token);
       storageManager.setAuthToken(action.payload.token);
+      console.log('Calling storageManager.setUser with user:', action.payload.user);
       storageManager.setUser(action.payload.user);
+      
+      console.log('Token stored in localStorage:', storageManager.getAuthToken());
+      console.log('=== LOGIN SUCCESS REDUCER END ===');
+      
       // Save credentials if remember me is enabled
       if (action.payload.rememberMe) {
         state.rememberMe = true;

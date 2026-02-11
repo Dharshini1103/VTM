@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Form, Input, Button, Card, Row, Col, Alert, Spin, Select, message } from 'antd';
-import { MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import { MailOutlined, LockOutlined, UserOutlined, PhoneOutlined } from '@ant-design/icons';
 import authApi from '../api/authApi';
 import { registerFailure } from '../slices/authSlice';
 import storageManager from '../utils/storageManager';
@@ -20,6 +20,7 @@ function Register() {
         gmailId: values.gmailId,
         firstName: values.firstName,
         lastName: values.lastName,
+        phoneNumber: values.phoneNumber,
         password: values.password,
         role: values.role,
       });
@@ -101,6 +102,17 @@ function Register() {
                   rules={[{ required: true, message: 'Please enter your last name' }]}
                 >
                   <Input prefix={<UserOutlined />} placeholder="Last name" />
+                </Form.Item>
+
+                <Form.Item
+                  label="Phone Number"
+                  name="phoneNumber"
+                  rules={[
+                    { required: true, message: 'Please enter your phone number' },
+                    { pattern: /^[0-9]{10}$/, message: 'Phone number must be 10 digits' }
+                  ]}
+                >
+                  <Input prefix={<PhoneOutlined />} placeholder="Enter 10-digit phone number" />
                 </Form.Item>
 
                 <Form.Item

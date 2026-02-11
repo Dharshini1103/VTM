@@ -16,16 +16,42 @@ function TaskDetail() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
+    console.log('🔄 TaskDetail useEffect triggered with taskId:', taskId);
     fetchTask();
     fetchTeamMembers();
   }, [taskId]);
 
   const fetchTask = async () => {
     try {
+      console.log('Fetching task with ID:', taskId);
       const response = await taskApi.getTaskById(taskId);
-      setTask(response.data.data);
+      console.log('Task response:', response);
+      console.log('Task response status:', response.status);
+      console.log('Task response data:', response.data);
+      
+      // Try different ways to extract task data (same as EditTask)
+      let taskData = null;
+      if (response.data?.data) {
+        taskData = response.data.data;
+        console.log('Using response.data.data');
+      } else if (response.data) {
+        taskData = response.data;
+        console.log('Using response.data');
+      } else if (response) {
+        taskData = response;
+        console.log('Using response directly');
+      }
+      
+      console.log('Final extracted task data:', taskData);
+      setTask(taskData);
     } catch (error) {
-      console.error('Error fetching task:', error);
+      console.error('❌ Error fetching task:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error data:', error.response?.data);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Full error object:', JSON.stringify(error, null, 2));
+      setTask(null);
     } finally {
       setLoading(false);
     }
@@ -33,10 +59,42 @@ function TaskDetail() {
 
   const fetchTeamMembers = async () => {
     try {
-      const response = await userApi.getAllTeamMembers();
-      setUsers(response.data.data || []);
+      console.log('Fetching team members for task detail...');
+      const response = await userApi.getAllUsers();
+      console.log('Users API response:', response);
+      
+      // Use the same data extraction logic as other components
+      let usersData = [];
+      if (response.data && response.data.success && response.data.data) {
+        usersData = response.data.data;
+        console.log('Using response.data.success.data');
+      } else if (response.data && response.data.data) {
+        usersData = response.data.data;
+        console.log('Using response.data.data');
+      } else if (Array.isArray(response.data)) {
+        usersData = response.data;
+        console.log('Using response.data array');
+      } else {
+        console.log('No users found, trying getAllTeamMembers...');
+        // Try fallback method
+        try {
+          const teamResponse = await userApi.getAllTeamMembers();
+          console.log('Team members fallback response:', teamResponse);
+          if (teamResponse.data && teamResponse.data.data) {
+            usersData = teamResponse.data.data;
+            console.log('Using team members fallback');
+          }
+        } catch (teamError) {
+          console.error('Team members fallback failed:', teamError);
+        }
+      }
+      
+      console.log('Final extracted users:', usersData);
+      setUsers(usersData);
     } catch (err) {
       console.error('Error fetching team members:', err);
+      console.error('Error response:', err.response);
+      setUsers([]);
     }
   };
 
@@ -152,7 +210,12 @@ function TaskDetail() {
                 {task.assignedToName || 'Unassigned'}
               </Descriptions.Item>
               <Descriptions.Item label="Deadline">
-                {new Date(task.deadline).toLocaleString()}
+                {task.deadline ? new Date(task.deadline).toLocaleDateString() : '-'}
+                {task.deadlineTime && (
+                  <span style={{ marginLeft: '8px', color: '#1890ff', fontWeight: '500' }}>
+                    {task.deadlineTime}
+                  </span>
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Created At">
                 {new Date(task.createdAt).toLocaleString()}

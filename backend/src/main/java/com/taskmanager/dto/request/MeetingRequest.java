@@ -14,12 +14,13 @@ public class MeetingRequest {
     private LocalDateTime endDateTime;
     private List<Long> attendeeIds;
     private List<Long> teamIds;
+    private String meetLink;
 
     public MeetingRequest() {}
 
     public MeetingRequest(String title, String description, Meeting.MeetingType meetingType, 
                      LocalDateTime startDateTime, LocalDateTime endDateTime, 
-                     List<Long> attendeeIds, List<Long> teamIds) {
+                     List<Long> attendeeIds, List<Long> teamIds, String meetLink) {
         this.title = title;
         this.description = description;
         this.meetingType = meetingType;
@@ -27,6 +28,7 @@ public class MeetingRequest {
         this.endDateTime = endDateTime;
         this.attendeeIds = attendeeIds;
         this.teamIds = teamIds;
+        this.meetLink = meetLink;
     }
 
     // Getters
@@ -37,6 +39,7 @@ public class MeetingRequest {
     public LocalDateTime getEndDateTime() { return endDateTime; }
     public List<Long> getAttendeeIds() { return attendeeIds; }
     public List<Long> getTeamIds() { return teamIds; }
+    public String getMeetLink() { return meetLink; }
 
     // Setters
     public void setTitle(String title) { this.title = title; }
@@ -46,4 +49,5 @@ public class MeetingRequest {
     public void setEndDateTime(LocalDateTime endDateTime) { this.endDateTime = endDateTime; }
     public void setAttendeeIds(List<Long> attendeeIds) { this.attendeeIds = attendeeIds; }
     public void setTeamIds(List<Long> teamIds) { this.teamIds = teamIds; }
+    public void setMeetLink(String meetLink) { this.meetLink = meetLink; }
 }

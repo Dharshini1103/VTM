@@ -1,8 +1,8 @@
 import axiosClient from './axiosClient';
 
 const meetingApi = {
-  scheduleGoogleMeet: (meetData) => {
-    return axiosClient.post('/meetings/schedule-meet', meetData);
+  scheduleZoomMeet: (meetData) => {
+    return axiosClient.post('/meetings/schedule-zoom', meetData);
   },
 
   scheduleMeeting: (meetingData) => {
@@ -11,6 +11,10 @@ const meetingApi = {
 
   getAllMeetings: () => {
     return axiosClient.get('/meetings');
+  },
+
+  getMyMeetings: () => {
+    return axiosClient.get('/meetings/my-meetings');
   },
 
   getMeetings: () => {
@@ -31,6 +35,10 @@ const meetingApi = {
 
   syncTaskWithCalendar: (taskId) => {
     return axiosClient.post(`/meetings/sync/${taskId}`);
+  },
+
+  canJoinMeeting: (meetingId) => {
+    return axiosClient.get(`/meetings/${meetingId}/can-join`);
   },
 };
 
