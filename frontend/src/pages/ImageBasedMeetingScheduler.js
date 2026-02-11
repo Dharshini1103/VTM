@@ -77,8 +77,12 @@ function ImageBasedMeetingScheduler() {
     
     fetchMeetings();
     fetchUsers();
-    calculateStats();
   }, []);
+
+  // Update stats whenever meetings change
+  useEffect(() => {
+    calculateStats();
+  }, [meetings]);
 
   // Handle URL parameters for pre-filled meeting title from task navigation
   useEffect(() => {
@@ -209,6 +213,10 @@ function ImageBasedMeetingScheduler() {
   };
 
   const calculateStats = () => {
+    console.log('=== CALCULATE STATS DEBUG ===');
+    console.log('Current meetings array:', meetings);
+    console.log('Meetings length:', meetings.length);
+    
     const total = meetings.length;
     const now = dayjs();
     
@@ -225,6 +233,9 @@ function ImageBasedMeetingScheduler() {
     const cancelled = meetings.filter(m => 
       m.status === 'CANCELLED' || m.status === 'CANCELED'
     ).length;
+    
+    console.log('Calculated stats:', { total, upcoming, completed, cancelled });
+    console.log('============================');
     
     setStats({ total, upcoming, completed, cancelled });
   };
@@ -738,7 +749,7 @@ function ImageBasedMeetingScheduler() {
           {activeTab === 'dashboard' && (
             <div className="dashboard-content">
               <Row gutter={[16, 16]}>
-                <Col span={6}>
+                <Col span={12}>
                   <Card className="stat-card">
                     <div className="stat-content">
                       <div className="stat-icon">
@@ -751,33 +762,7 @@ function ImageBasedMeetingScheduler() {
                     </div>
                   </Card>
                 </Col>
-                <Col span={6}>
-                  <Card className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon">
-                        <ClockCircleOutlined />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.upcoming}</div>
-                        <div className="stat-label">Upcoming</div>
-                      </div>
-                    </div>
-                  </Card>
-                </Col>
-                <Col span={6}>
-                  <Card className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon">
-                        <CheckCircleOutlined />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.completed}</div>
-                        <div className="stat-label">Completed</div>
-                      </div>
-                    </div>
-                  </Card>
-                </Col>
-                <Col span={6}>
+                <Col span={12}>
                   <Card className="stat-card">
                     <div className="stat-content">
                       <div className="stat-icon">
