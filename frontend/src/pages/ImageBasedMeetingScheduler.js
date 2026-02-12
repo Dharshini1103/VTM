@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { 
-  Card, Row, Col, Form, Input, Select, Button, DatePicker, 
+import {
+  Card, Row, Col, Form, Input, Select, Button, DatePicker,
   Table, Space, Tag, message, Modal, Descriptions, Badge,
-  Tooltip, Typography, Divider, Alert, Spin, Avatar, 
+  Tooltip, Typography, Divider, Alert, Spin, Avatar,
   Tabs, Timeline, Statistic, Progress, List, Calendar,
   Switch, Radio, Rate, Upload, Popconfirm, Dropdown,
   Menu, Checkbox, Collapse, Empty, Pagination
 } from 'antd';
-import { 
+import {
   CalendarOutlined, UserOutlined, MailOutlined, ClockCircleOutlined,
   VideoCameraOutlined, PhoneOutlined, TeamOutlined, PlusOutlined,
   EditOutlined, DeleteOutlined, SyncOutlined, VideoCameraFilled,
@@ -39,11 +39,11 @@ const { Panel } = Collapse;
 function ImageBasedMeetingScheduler() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Get current user from Redux state
   const currentUser = useSelector((state) => state.auth.user);
   const userRole = currentUser?.role || 'USER';
-  
+
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -69,12 +69,12 @@ function ImageBasedMeetingScheduler() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [selectedDate, setSelectedDate] = useState(dayjs());
-  
+
   useEffect(() => {
     console.log('=== MEETING PAGE MOUNT ===');
     console.log('Token exists:', !!storageManager.getAuthToken());
     console.log('Is authenticated:', storageManager.isAuthenticated());
-    
+
     fetchMeetings();
     fetchUsers();
   }, []);
@@ -89,12 +89,12 @@ function ImageBasedMeetingScheduler() {
     const searchParams = new URLSearchParams(location.search);
     const taskTitle = searchParams.get('taskTitle');
     const openModal = searchParams.get('openModal');
-    
+
     if (taskTitle) {
       setPrefilledTitle(taskTitle);
       console.log('Pre-filled title from task:', taskTitle);
     }
-    
+
     if (openModal === 'true' && taskTitle) {
       // Navigate to meetings tab and open modal with pre-filled title
       setActiveTab('meetings');
@@ -108,16 +108,16 @@ function ImageBasedMeetingScheduler() {
     try {
       setError(null);
       setLoading(true);
-      
+
       // Check authentication first
       if (!authGuard.isAuthenticated()) {
         setError('Please log in to view meetings');
         authGuard.forceLogout();
         return;
       }
-      
+
       console.log('User authenticated, fetching meetings...');
-      
+
       // Use different endpoints based on user role
       let response;
       if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
@@ -127,9 +127,9 @@ function ImageBasedMeetingScheduler() {
         // Managers and Users can only see their own meetings
         response = await meetingApi.getMyMeetings();
       }
-      
+
       console.log('Meetings response:', response);
-      
+
       if (response && response.data) {
         if (response.data.success && response.data.data) {
           console.log('=== MEETINGS RESPONSE DEBUG ===');
@@ -137,7 +137,7 @@ function ImageBasedMeetingScheduler() {
           console.log('First meeting meetLink:', response.data.data[0]?.meetLink);
           console.log('All meetLinks:', response.data.data.map(m => ({ id: m.id, title: m.title, meetLink: m.meetLink })));
           console.log('============================');
-          
+
           setMeetings(response.data.data);
           calculateStats();
         } else if (response.data.success && response.data.data === null) {
@@ -159,9 +159,9 @@ function ImageBasedMeetingScheduler() {
       console.error('Error:', err);
       console.error('Status:', err.response?.status);
       console.error('Data:', err.response?.data);
-      
+
       let errorMessage = 'Failed to fetch meetings';
-      
+
       if (err.response?.status === 401) {
         errorMessage = 'Authentication expired - please login again';
         authGuard.forceLogout();
@@ -176,7 +176,7 @@ function ImageBasedMeetingScheduler() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -187,17 +187,17 @@ function ImageBasedMeetingScheduler() {
     try {
       console.log('=== FETCH USERS START ===');
       const token = storageManager.getAuthToken();
-      
+
       if (!token) {
         console.log('No token found - redirecting to login');
         authGuard.forceLogout();
         return;
       }
-      
+
       setUsersLoading(true);
       const response = await userApi.getAllTeamMembers();
       console.log('Users API response:', response);
-      
+
       if (response.data && response.data.success && response.data.data) {
         setUsers(response.data.data);
       } else {
@@ -216,27 +216,27 @@ function ImageBasedMeetingScheduler() {
     console.log('=== CALCULATE STATS DEBUG ===');
     console.log('Current meetings array:', meetings);
     console.log('Meetings length:', meetings.length);
-    
+
     const total = meetings.length;
     const now = dayjs();
-    
+
     const upcoming = meetings.filter(m => {
-      const isUpcoming = (m.status === 'SCHEDULED' || m.status === 'UPCOMING' || !m.status) && 
-                       dayjs(m.startDateTime).isAfter(now);
+      const isUpcoming = (m.status === 'SCHEDULED' || m.status === 'UPCOMING' || !m.status) &&
+        dayjs(m.startDateTime).isAfter(now);
       return isUpcoming;
     }).length;
-    
-    const completed = meetings.filter(m => 
+
+    const completed = meetings.filter(m =>
       m.status === 'COMPLETED' || m.status === 'DONE'
     ).length;
-    
-    const cancelled = meetings.filter(m => 
+
+    const cancelled = meetings.filter(m =>
       m.status === 'CANCELLED' || m.status === 'CANCELED'
     ).length;
-    
+
     console.log('Calculated stats:', { total, upcoming, completed, cancelled });
     console.log('============================');
-    
+
     setStats({ total, upcoming, completed, cancelled });
   };
 
@@ -298,11 +298,11 @@ function ImageBasedMeetingScheduler() {
 
   const getMeetingTypeIcon = (type) => {
     switch (type) {
-      case 'ZOOM_MEET': return <VideoCameraFilled style={{ color: '#2D8CFF' }} />;
-      case 'VIDEO_CALL': return <VideoCameraOutlined style={{ color: '#52c41a' }} />;
-      case 'PHONE_CALL': return <PhoneOutlined style={{ color: '#1890ff' }} />;
-      case 'IN_PERSON': return <TeamOutlined style={{ color: '#722ed1' }} />;
-      default: return <CalendarOutlined style={{ color: '#8c8c8c' }} />;
+      case 'ZOOM_MEET': return <VideoCameraFilled style={{ color: '#3b82f6', fontSize: '16px' }} />;
+      case 'VIDEO_CALL': return <VideoCameraOutlined style={{ color: '#10b981', fontSize: '16px' }} />;
+      case 'PHONE_CALL': return <PhoneOutlined style={{ color: '#f59e0b', fontSize: '16px' }} />;
+      case 'IN_PERSON': return <TeamOutlined style={{ color: '#8b5cf6', fontSize: '16px' }} />;
+      default: return <CalendarOutlined style={{ color: '#94a3b8', fontSize: '16px' }} />;
     }
   };
 
@@ -310,23 +310,23 @@ function ImageBasedMeetingScheduler() {
     if (record.meetLink && (record.status === 'SCHEDULED' || record.status === 'IN_PROGRESS')) {
       return (
         <Space>
-          <Badge status="processing" text="Active" />
+          <Badge status="processing" text={<span style={{ color: 'var(--primary-color)' }}>Active</span>} />
           {!record.canJoin && (
-            <Tag color="default" size="small">Not Participant</Tag>
+            <Tag style={{ borderRadius: '12px', fontSize: '10px' }}>Guest</Tag>
           )}
         </Space>
       );
     }
-    
+
     switch (record.status) {
       case 'SCHEDULED':
         return <Badge status="default" text="Scheduled" />;
       case 'IN_PROGRESS':
-        return <Badge status="processing" text="In Progress" />;
+        return <Badge status="processing" text={<span style={{ color: 'var(--primary-color)' }}>In Progress</span>} />;
       case 'COMPLETED':
-        return <Badge status="success" text="Completed" />;
+        return <Badge status="success" text={<span style={{ color: 'var(--success-color)' }}>Completed</span>} />;
       case 'CANCELLED':
-        return <Badge status="error" text="Cancelled" />;
+        return <Badge status="error" text={<span style={{ color: 'var(--danger-color)' }}>Cancelled</span>} />;
       default:
         return <Badge status="default" text="Unknown" />;
     }
@@ -383,106 +383,62 @@ function ImageBasedMeetingScheduler() {
       return meetingDate === dateStr;
     });
 
-    console.log(`=== CALENDAR DEBUG ===`);
-    console.log('Date:', dateStr);
-    console.log('All meetings:', meetings.length);
-    console.log('Sample meeting:', meetings[0]);
-    console.log('Sample startDateTime:', meetings[0]?.startDateTime);
-    console.log('Formatted meeting date:', meetings[0] ? dayjs(meetings[0].startDateTime).format('YYYY-MM-DD') : 'N/A');
-    console.log('Day meetings:', dayMeetings.length);
-    console.log('====================');
-
     return (
-      <div className="ant-picker-cell" style={{ 
-        position: 'relative', 
+      <div className={`date-cell ${dayMeetings.length > 0 ? 'has-meetings' : ''}`} style={{
+        position: 'relative',
         height: '100%',
-        border: dayMeetings.length > 0 ? '2px solid #1890ff' : '1px solid #f0f0f0',
-        borderRadius: '6px',
-        backgroundColor: dayMeetings.length > 0 ? '#f6ffed' : 'white',
-        cursor: 'pointer'
+        padding: '4px',
       }}>
-        <div style={{ 
-          padding: '4px 8px', 
+        <div style={{
           fontSize: '12px',
           fontWeight: 'bold',
-          color: dayMeetings.length > 0 ? '#1890ff' : '#666'
+          color: dayMeetings.length > 0 ? 'var(--primary-color)' : 'var(--text-light)',
+          marginBottom: '4px'
         }}>
           {date.date()}
         </div>
-        
+
         {dayMeetings.length > 0 && (
-          <div style={{ 
-            marginTop: '4px',
-            padding: '0 4px',
-            maxHeight: '60px',
-            overflowY: 'auto'
-          }}>
+          <div style={{ maxHeight: '60px', overflowY: 'auto' }}>
             {dayMeetings.slice(0, 3).map((meeting, index) => (
               <div
                 key={meeting.id}
-                onClick={() => handleCalendarMeetingClick(meeting)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCalendarMeetingClick(meeting);
+                }}
+                className="calendar-event-pill"
                 style={{
-                  backgroundColor: '#e6f7ff',
-                  border: '1px solid #91d5ff',
-                  borderRadius: '4px',
-                  padding: '4px 6px',
-                  marginBottom: index < dayMeetings.length - 1 ? '4px' : '0',
+                  backgroundColor: 'var(--primary-light)',
+                  borderLeft: '2px solid var(--primary-color)',
+                  borderRadius: '2px',
+                  padding: '2px 4px',
+                  marginBottom: '2px',
                   cursor: 'pointer',
                   fontSize: '10px',
-                  color: '#1890ff',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#bae7ff';
-                  e.currentTarget.style.borderColor = '#4096ff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#e6f7ff';
-                  e.currentTarget.style.borderColor = '#91d5ff';
+                  color: 'var(--primary-700)',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis'
                 }}
                 title={`${meeting.title} - ${dayjs(meeting.startDateTime).format('hh:mm A')}`}
               >
-                <div style={{ 
-                  width: '6px', 
-                  height: '6px', 
-                  backgroundColor: '#52c41a', 
-                  borderRadius: '50%', 
-                  marginRight: '4px',
-                  flexShrink: 0
-                }} />
-                <div style={{ 
-                  overflow: 'hidden', 
-                  textOverflow: 'ellipsis', 
-                  whiteSpace: 'nowrap',
-                  flex: 1
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: '1px' }}>
-                    {meeting.title}
-                  </div>
-                  <div style={{ fontSize: '9px', color: '#666' }}>
-                    {dayjs(meeting.startDateTime).format('hh:mm A')}
-                  </div>
-                </div>
+                {meeting.title}
               </div>
             ))}
-            
+
             {dayMeetings.length > 3 && (
               <div
                 style={{
-                  backgroundColor: '#ff4d4f',
-                  color: 'white',
-                  borderRadius: '4px',
-                  padding: '2px 4px',
+                  color: 'var(--text-secondary)',
                   fontSize: '9px',
-                  cursor: 'pointer',
                   textAlign: 'center',
-                  fontWeight: 'bold'
+                  marginTop: '2px'
                 }}
-                onClick={() => handleViewMoreMeetings(dateStr)}
-                title={`View all ${dayMeetings.length} meetings`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewMoreMeetings(dateStr);
+                }}
               >
                 +{dayMeetings.length - 3} more
               </div>
@@ -502,27 +458,19 @@ function ImageBasedMeetingScheduler() {
 
     if (monthMeetings.length > 0) {
       return (
-        <div style={{ position: 'relative', height: '100%' }}>
-          <div className="ant-picker-cell-inner" style={{ position: 'relative', height: '100%' }}>
-            <div
-              style={{
-                position: 'absolute',
-                top: '2px',
-                right: '2px',
-                backgroundColor: '#ff4d4f',
-                color: 'white',
-                fontSize: '9px',
-                padding: '1px 4px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                zIndex: 1,
-                cursor: 'pointer'
-              }}
-              onClick={() => handleViewMoreMeetings(dateStr)}
-              title={`${monthMeetings.length} meetings on ${date.format('MMM DD')}`}
-            >
-              {monthMeetings.length}
-            </div>
+        <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            style={{
+              backgroundColor: 'var(--primary-color)',
+              color: 'white',
+              fontSize: '10px',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+            }}
+            title={`${monthMeetings.length} meetings`}
+          >
+            {monthMeetings.length}
           </div>
         </div>
       );
@@ -540,7 +488,7 @@ function ImageBasedMeetingScheduler() {
       const meetingDate = dayjs(meeting.startDateTime).format('YYYY-MM-DD');
       return meetingDate === dateStr;
     });
-    
+
     setSelectedDateMeetings(dateMeetings);
     setCalendarListModalVisible(true);
   };
@@ -557,12 +505,12 @@ function ImageBasedMeetingScheduler() {
       width: 350,
       render: (text, record) => (
         <div style={{ padding: '8px 0' }}>
-          <div style={{ fontWeight: 500, marginBottom: 4, fontSize: '14px' }}>
+          <div style={{ fontWeight: 600, marginBottom: 4, fontSize: '15px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
             {getMeetingTypeIcon(record.meetingType)}
-            <span style={{ marginLeft: 8 }}>{text}</span>
+            <span style={{ marginLeft: 12 }}>{text}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.3' }}>
-            {record.description || 'No description'}
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            {record.description || 'No description provided'}
           </div>
         </div>
       ),
@@ -571,14 +519,17 @@ function ImageBasedMeetingScheduler() {
       title: 'Date & Time',
       dataIndex: 'startDateTime',
       key: 'startDateTime',
-      width: 180,
+      width: 200,
       render: (dateTime, record) => (
         <div style={{ padding: '8px 0' }}>
-          <div style={{ fontWeight: 500, fontSize: '13px' }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
             {dayjs(dateTime).format('MMM DD, YYYY')}
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {dayjs(dateTime).format('hh:mm A')} - {dayjs(record.endDateTime).format('hh:mm A')}
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <ClockCircleOutlined style={{ fontSize: '12px' }} />
+              {dayjs(dateTime).format('hh:mm A')} - {dayjs(record.endDateTime).format('hh:mm A')}
+            </span>
           </div>
         </div>
       ),
@@ -587,15 +538,20 @@ function ImageBasedMeetingScheduler() {
       title: 'Attendees',
       dataIndex: 'attendees',
       key: 'attendees',
-      width: 150,
+      width: 180,
       render: (attendees) => (
         <div style={{ padding: '8px 0' }}>
-          <div style={{ fontWeight: 500, fontSize: '13px' }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
             {attendees?.length || 0} attendees
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {attendees?.slice(0, 2).map(a => a.firstName).join(', ')}
-            {attendees?.length > 2 && ` +${attendees.length - 2} more`}
+          <div style={{ margin: '6px 0 0 0' }}>
+            <Avatar.Group maxCount={3} size="small">
+              {attendees?.map(a => (
+                <Tooltip title={`${a.firstName} ${a.lastName}`} key={a.id}>
+                  <Avatar style={{ backgroundColor: '#3b82f6' }}>{a.firstName?.charAt(0)}</Avatar>
+                </Tooltip>
+              ))}
+            </Avatar.Group>
           </div>
         </div>
       ),
@@ -608,33 +564,27 @@ function ImageBasedMeetingScheduler() {
       render: (meetLink, record) => (
         <div style={{ padding: '8px 0' }}>
           {meetLink ? (
-            <div>
-              <div style={{ 
-                fontSize: '11px', 
-                color: '#1890ff', 
-                cursor: 'pointer', 
-                textDecoration: 'underline',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '200px',
-                marginBottom: '4px'
-              }}>
-                {meetLink}
-              </div>
-              <Button 
-                type="primary" 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Button
+                type="primary"
                 size="small"
                 onClick={() => window.open(meetLink, '_blank')}
-                style={{ fontSize: '11px', height: '24px' }}
+                icon={<VideoCameraOutlined />}
+                ghost
               >
-                Join Now
+                Join Meeting
               </Button>
+              <Text
+                type="secondary"
+                copyable={{ text: meetLink }}
+                ellipsis={{ tooltip: meetLink }}
+                style={{ fontSize: '12px', maxWidth: '200px' }}
+              >
+                {meetLink}
+              </Text>
             </div>
           ) : (
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              No link
-            </Text>
+            <Tag color="default">No Link</Tag>
           )}
         </div>
       ),
@@ -642,35 +592,26 @@ function ImageBasedMeetingScheduler() {
     {
       title: 'Actions',
       key: 'actions',
-      width: 120,
+      width: 100,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="Edit Meeting">
-            <Button 
-              type="default" 
-              size="small" 
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              size="small"
               icon={<EditOutlined />}
               onClick={() => handleEditMeeting(record)}
             />
           </Tooltip>
-          <Tooltip title="Cancel Meeting">
-            <Button 
-              type="default" 
-              size="small" 
+          <Tooltip title="Cancel">
+            <Button
+              type="text"
+              danger
+              size="small"
               icon={<DeleteOutlined />}
               onClick={() => handleCancelMeeting(record)}
             />
           </Tooltip>
-          {record.meetLink && (
-            <Tooltip title="Copy Meeting Link">
-              <Button 
-                type="default" 
-                size="small" 
-                icon={<CopyOutlined />}
-                onClick={() => handleCopyMeetLink(record.meetLink)}
-              />
-            </Tooltip>
-          )}
         </Space>
       ),
     },
@@ -700,128 +641,178 @@ function ImageBasedMeetingScheduler() {
 
   return (
     <>
-      <div className="image-based-meeting-scheduler">
+      <div className="image-based-meeting-scheduler" style={{ margin: '-24px', height: 'calc(100vh - 64px)', width: 'calc(100% + 48px)' }}>
         {/* Sidebar */}
         <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <div className="sidebar-header">
-          <div className="logo">
-            <CalendarOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-            {!sidebarCollapsed && <span className="logo-text">MeetHub</span>}
-          </div>
-          <Button 
-            type="text" 
-            icon={<MenuOutlined />} 
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="collapse-btn"
-          />
-        </div>
-        
-        <div className="sidebar-menu">
-          {menuItems.map(item => (
-            <div 
-              key={item.key}
-              className={`menu-item ${activeTab === item.key ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.key)}
-            >
-              {item.icon}
-              {!sidebarCollapsed && <span>{item.label}</span>}
+            <div className="logo">
+              <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                <CalendarOutlined style={{ fontSize: '18px', color: 'white' }} />
+              </div>
+              <span className="logo-text">MeetHub</span>
             </div>
-          ))}
-        </div>
-      </div>
+            <button
+              className="collapse-btn"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            >
+              {sidebarCollapsed ? <MenuOutlined /> : <LeftOutlined />}
+            </button>
+          </div>
 
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Header */}
-        <div className="header">
-          <div className="header-left">
-            <Title level={3} className="page-title">
-              {activeTab === 'dashboard' && 'Dashboard'}
-              {activeTab === 'meetings' && 'Meetings'}
-              {activeTab === 'team' && 'Team Members'}
-              {activeTab === 'calendar' && 'Calendar'}
-            </Title>
+          <div className="sidebar-menu">
+            {menuItems.map(item => (
+              <div
+                key={item.key}
+                className={`menu-item ${activeTab === item.key ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.key)}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ padding: '16px', marginTop: 'auto' }}>
+            {!sidebarCollapsed && (
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '8px' }}>LOGGED IN AS</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Avatar style={{ backgroundColor: '#2563eb' }}>{currentUser?.firstName?.charAt(0) || 'U'}</Avatar>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ color: 'white', fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentUser?.firstName || 'User'} {currentUser?.lastName}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>{userRole}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        
-        <div className="content-area">
-          {activeTab === 'dashboard' && (
-            <div className="dashboard-content">
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
-                  <Card className="stat-card">
+        {/* Main Content */}
+        <div className="main-content">
+          {/* Header */}
+          <div className="header">
+            <div className="header-left">
+              <h1 className="page-title">
+                {activeTab === 'dashboard' && 'Dashboard'}
+                {activeTab === 'meetings' && 'My Meetings'}
+                {activeTab === 'team' && 'Team Directory'}
+                {activeTab === 'calendar' && 'Calendar'}
+              </h1>
+            </div>
+            <div className="header-right">
+              {/* Add any header actions here if needed */}
+            </div>
+          </div>
+
+
+          <div className="content-area">
+            {activeTab === 'dashboard' && (
+              <div className="dashboard-content">
+                <div className="stats-row">
+                  <div className="stat-card">
                     <div className="stat-content">
                       <div className="stat-icon">
-                        <CalendarOutlined />
+                        <CalendarOutlined style={{ color: '#3b82f6' }} />
                       </div>
                       <div className="stat-info">
                         <div className="stat-number">{stats.total}</div>
                         <div className="stat-label">Total Meetings</div>
                       </div>
                     </div>
-                  </Card>
-                </Col>
-                <Col span={12}>
-                  <Card className="stat-card">
+                  </div>
+
+                  <div className="stat-card">
                     <div className="stat-content">
-                      <div className="stat-icon">
-                        <TeamOutlined />
+                      <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
+                        <CheckCircleOutlined style={{ color: '#10b981' }} />
                       </div>
                       <div className="stat-info">
-                        <div className="stat-number">{users.length}</div>
-                        <div className="stat-label">Team Members</div>
+                        <div className="stat-number">{stats.completed}</div>
+                        <div className="stat-label">Completed</div>
                       </div>
                     </div>
-                  </Card>
-                </Col>
-              </Row>
+                  </div>
 
-              <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-                <Col span={24}>
-                  <Card title="Recent Meetings">
-                    <Table
-                      dataSource={filteredMeetings.slice(0, 5)}
-                      columns={meetingColumns}
-                      rowKey="id"
-                      pagination={false}
-                      size="small"
-                      scroll={{ x: 1150 }}
-                      bordered={false}
-                      style={{
-                        background: 'transparent',
-                      }}
-                    />
-                  </Card>
-                </Col>
-              </Row>
-            </div>
-          )}
+                  <div className="stat-card">
+                    <div className="stat-content">
+                      <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
+                        <ClockCircleOutlined style={{ color: '#f59e0b' }} />
+                      </div>
+                      <div className="stat-info">
+                        <div className="stat-number">{stats.upcoming}</div>
+                        <div className="stat-label">Upcoming</div>
+                      </div>
+                    </div>
+                  </div>
 
-          {activeTab === 'meetings' && (
-            <div className="meetings-content">
-              <Card>
+                  <div className="stat-card">
+                    <div className="stat-content">
+                      <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
+                        <CloseCircleOutlined style={{ color: '#ef4444' }} />
+                      </div>
+                      <div className="stat-info">
+                        <div className="stat-number">{stats.cancelled}</div>
+                        <div className="stat-label">Cancelled</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="recent-meetings-card">
+                  <div className="meetings-header" style={{ marginBottom: '16px', padding: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', boxShadow: 'none' }}>
+                    <Title level={4} style={{ margin: 0 }}>Recent Meetings</Title>
+                    <Button type="link" onClick={() => setActiveTab('meetings')}>View All</Button>
+                  </div>
+                  <Table
+                    dataSource={filteredMeetings.slice(0, 5)}
+                    columns={meetingColumns}
+                    rowKey="id"
+                    pagination={false}
+                    size="middle"
+                    scroll={{ x: 1000 }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'meetings' && (
+              <div className="meetings-content">
                 <div className="meetings-header">
                   <div className="meetings-title">
-                    <Title level={4}>All Meetings</Title>
+                    <Title level={4} style={{ margin: 0 }}>All Meetings</Title>
+                    <Text type="secondary">Manage your upcoming and past meetings</Text>
                   </div>
                   <div className="meetings-actions">
                     <Space>
                       <Select
                         value={filterType}
                         onChange={setFilterType}
-                        style={{ width: 150 }}
+                        style={{ width: 180 }}
+                        placeholder="Filter by Type"
                       >
                         <Option value="all">All Types</Option>
                         <Option value="ZOOM_MEET">
                           <Space><VideoCameraFilled /> Zoom Meeting</Space>
                         </Option>
+                        <Option value="VIDEO_CALL">
+                          <Space><VideoCameraOutlined /> Video Call</Space>
+                        </Option>
+                        <Option value="PHONE_CALL">
+                          <Space><PhoneOutlined /> Phone Call</Space>
+                        </Option>
+                        <Option value="IN_PERSON">
+                          <Space><TeamOutlined /> In Person</Space>
+                        </Option>
                       </Select>
                       {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                        <Button 
-                          type="primary" 
+                        <Button
+                          type="primary"
                           icon={<PlusOutlined />}
                           onClick={() => setIsModalVisible(true)}
+                          size="large"
                         >
                           Schedule Meeting
                         </Button>
@@ -830,166 +821,167 @@ function ImageBasedMeetingScheduler() {
                   </div>
                 </div>
 
-                <Table
-                  dataSource={filteredMeetings}
-                  columns={meetingColumns}
-                  rowKey="id"
-                  loading={loading}
-                  pagination={{
-                    pageSize: 8,
-                    showSizeChanger: false,
-                    showTotal: (total) => `Showing ${total} meetings`,
-                    size: 'default',
-                  }}
-                  scroll={{ x: 1150 }}
-                  bordered={false}
-                  style={{
-                    background: 'transparent',
-                  }}
-                />
-              </Card>
-            </div>
-          )}
+                <div className="ant-table-wrapper">
+                  <Table
+                    dataSource={filteredMeetings}
+                    columns={meetingColumns}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{
+                      pageSize: 8,
+                      showSizeChanger: false,
+                      showTotal: (total) => `Showing ${total} meetings`,
+                      size: 'default',
+                    }}
+                    scroll={{ x: 1150 }}
+                    size="middle"
+                  />
+                </div>
+              </div>
+            )}
 
-          {activeTab === 'team' && (
-            <div className="team-content">
-              <Card 
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Team Members</span>
-                    <Tag color="blue" style={{ fontSize: '11px' }}>
-                      {users.length} active members
-                    </Tag>
+            {activeTab === 'team' && (
+              <div className="team-content">
+                <div className="meetings-header" style={{ marginBottom: '24px' }}>
+                  <div className="meetings-title">
+                    <Title level={4} style={{ margin: 0 }}>Team Members</Title>
+                    <Text type="secondary">View and manage team directory</Text>
                   </div>
-                }
-              >
-                <Table
-                  dataSource={users}
-                  columns={[
-                    {
-                      title: 'Name',
-                      dataIndex: 'firstName',
-                      key: 'name',
-                      render: (text, record) => (
-                        <Space>
-                          <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
-                            {record.firstName?.charAt(0)}{record.lastName?.charAt(0)}
-                          </Avatar>
-                          <div>
-                            <div style={{ fontWeight: 500 }}>
-                              {record.firstName} {record.lastName}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#666' }}>
-                              {record.email}
-                            </div>
-                            {record.jobTitle && (
-                              <div style={{ fontSize: '11px', color: '#999' }}>
-                                {record.jobTitle}
+                  <Tag color="blue" style={{ fontSize: '14px', padding: '6px 12px', borderRadius: '8px' }}>
+                    {users.length} active members
+                  </Tag>
+                </div>
+
+                <div className="ant-table-wrapper">
+                  <Table
+                    loading={usersLoading}
+                    dataSource={users}
+                    columns={[
+                      {
+                        title: 'Name',
+                        dataIndex: 'firstName',
+                        key: 'name',
+                        render: (text, record) => (
+                          <Space size="middle">
+                            <Avatar size={40} style={{ backgroundColor: '#3b82f6', fontSize: '16px' }}>
+                              {record.firstName?.charAt(0)}{record.lastName?.charAt(0)}
+                            </Avatar>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '15px' }}>
+                                {record.firstName} {record.lastName}
                               </div>
+                              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                {record.email}
+                              </div>
+                              {record.jobTitle && (
+                                <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                                  {record.jobTitle}
+                                </div>
+                              )}
+                            </div>
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: 'Role',
+                        dataIndex: 'role',
+                        key: 'role',
+                        render: (role) => (
+                          <Tag color={role === 'ADMIN' ? 'red' : role === 'MANAGER' ? 'orange' : 'blue'}>
+                            {role}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Status',
+                        dataIndex: 'status',
+                        key: 'status',
+                        render: (status) => (
+                          <Tag color={status === 'ACTIVE' ? 'success' : 'default'} style={{ borderRadius: '12px' }}>
+                            {status || 'ACTIVE'}
+                          </Tag>
+                        ),
+                      },
+                      {
+                        title: 'Actions',
+                        key: 'actions',
+                        render: (_, record) => (
+                          <Space size="small">
+                            {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+                              <Tooltip title="Schedule Meeting">
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  icon={<CalendarOutlined />}
+                                  onClick={() => handleScheduleWithMember(record)}
+                                  ghost
+                                >
+                                  Schedule
+                                </Button>
+                              </Tooltip>
                             )}
-                          </div>
-                        </Space>
-                      ),
-                    },
-                    {
-                      title: 'Role',
-                      dataIndex: 'role',
-                      key: 'role',
-                      render: (role) => (
-                        <Tag color={role === 'ADMIN' ? 'red' : role === 'MANAGER' ? 'orange' : 'blue'}>
-                          {role}
-                        </Tag>
-                      ),
-                    },
-                    {
-                      title: 'Status',
-                      dataIndex: 'status',
-                      key: 'status',
-                      render: (status) => (
-                        <Tag color={status === 'ACTIVE' ? 'green' : 'default'}>
-                          {status || 'ACTIVE'}
-                        </Tag>
-                      ),
-                    },
-                    {
-                      title: 'Actions',
-                      key: 'actions',
-                      render: (_, record) => (
-                        <Space size="small">
-                          {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                            <Tooltip title="Schedule Meeting with this Member">
-                              <Button 
-                                type="primary" 
+                            <Tooltip title="View Profile">
+                              <Button
+                                type="default"
                                 size="small"
-                                icon={<CalendarOutlined />}
-                                onClick={() => handleScheduleWithMember(record)}
-                              >
-                                Schedule
-                              </Button>
+                                icon={<UserOutlined />}
+                                onClick={() => handleViewProfile(record)}
+                              />
                             </Tooltip>
-                          )}
-                          <Tooltip title="View Profile">
-                            <Button 
-                              type="default" 
-                              size="small"
-                              icon={<UserOutlined />}
-                              onClick={() => handleViewProfile(record)}
-                            />
-                          </Tooltip>
-                        </Space>
-                      ),
-                    },
-                  ]}
-                  rowKey="id"
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `Showing ${total} team members`,
-                  }}
-                  bordered={false}
-                  size="middle"
-                />
-              </Card>
-            </div>
-          )}
+                          </Space>
+                        ),
+                      },
+                    ]}
+                    rowKey="id"
+                    pagination={{
+                      pageSize: 10,
+                      showSizeChanger: true,
+                      showTotal: (total) => `Showing ${total} team members`,
+                    }}
+                    size="middle"
+                  />
+                </div>
+              </div>
+            )}
 
-          {activeTab === 'calendar' && (
-            <div className="calendar-content">
-              <Card 
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Meeting Calendar</span>
-                    <Space>
-                      <Tag color="blue" style={{ fontSize: '11px' }}>
-                        {meetings.length} meetings
-                      </Tag>
-                      <Select
-                        value={calendarView}
-                        onChange={setCalendarView}
-                        style={{ width: 120 }}
-                        size="small"
-                      >
-                        <Option value="month">Month</Option>
-                        <Option value="week">Week</Option>
-                        <Option value="day">Day</Option>
-                      </Select>
-                    </Space>
+            {activeTab === 'calendar' && (
+              <div className="calendar-content">
+                <div className="meetings-header" style={{ marginBottom: '24px' }}>
+                  <div className="meetings-title">
+                    <Title level={4} style={{ margin: 0 }}>Meeting Calendar</Title>
+                    <Text type="secondary">View your schedule</Text>
                   </div>
-                }
-              >
-                <Calendar
-                  fullscreen={false}
-                  value={calendarDate}
-                  onChange={setCalendarDate}
-                  mode={calendarView}
-                  dateCellRender={dateCellRender}
-                  monthCellRender={monthCellRender}
-                />
-              </Card>
-            </div>
-          )}
+                  <Space>
+                    <Tag color="blue" style={{ fontSize: '14px', padding: '6px 12px', borderRadius: '8px' }}>
+                      {meetings.length} meetings
+                    </Tag>
+                    <Select
+                      value={calendarView}
+                      onChange={setCalendarView}
+                      style={{ width: 120 }}
+                      size="large"
+                    >
+                      <Option value="month">Month</Option>
+                      <Option value="week">Week</Option>
+                      <Option value="day">Day</Option>
+                    </Select>
+                  </Space>
+                </div>
+
+                <div className="calendar-wrapper" style={{ background: 'white', padding: '24px', borderRadius: '20px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+                  <Calendar
+                    fullscreen={false}
+                    value={calendarDate}
+                    onChange={setCalendarDate}
+                    mode={calendarView}
+                    dateCellRender={dateCellRender}
+                    monthCellRender={monthCellRender}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Schedule Meeting Modal */}
@@ -1020,7 +1012,7 @@ function ImageBasedMeetingScheduler() {
             name="title"
             rules={[{ required: true, message: 'Please enter meeting title' }]}
           >
-            <Input 
+            <Input
               placeholder="Enter meeting title"
               size="large"
             />
@@ -1061,8 +1053,8 @@ function ImageBasedMeetingScheduler() {
             label="Description"
             name="description"
           >
-            <Input.TextArea 
-              rows={3} 
+            <Input.TextArea
+              rows={3}
               placeholder="Enter meeting description"
               showCount
               maxLength={500}
@@ -1164,9 +1156,9 @@ function ImageBasedMeetingScheduler() {
 
           <Form.Item>
             <Space>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 size="large"
               >
@@ -1209,7 +1201,7 @@ function ImageBasedMeetingScheduler() {
             name="title"
             rules={[{ required: true, message: 'Please enter meeting title' }]}
           >
-            <Input 
+            <Input
               placeholder="Enter meeting title"
               size="large"
             />
@@ -1250,8 +1242,8 @@ function ImageBasedMeetingScheduler() {
             label="Description"
             name="description"
           >
-            <Input.TextArea 
-              rows={3} 
+            <Input.TextArea
+              rows={3}
               placeholder="Enter meeting description"
               showCount
               maxLength={500}
@@ -1353,9 +1345,9 @@ function ImageBasedMeetingScheduler() {
 
           <Form.Item>
             <Space>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 size="large"
               >
@@ -1379,9 +1371,9 @@ function ImageBasedMeetingScheduler() {
       >
         {selectedMeeting && (
           <div style={{ padding: '20px' }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               marginBottom: '20px',
               paddingBottom: '20px',
               borderBottom: '1px solid #f0f0f0'
@@ -1408,9 +1400,9 @@ function ImageBasedMeetingScheduler() {
               </div>
             </div>
 
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               marginBottom: '20px',
               padding: '16px',
               backgroundColor: '#fafafa',
@@ -1436,8 +1428,8 @@ function ImageBasedMeetingScheduler() {
                 </div>
                 <div style={{ fontSize: '16px', color: '#333', fontWeight: 500 }}>
                   {selectedMeeting.meetingType === 'ZOOM_MEET' ? 'Zoom Meeting' :
-                   selectedMeeting.meetingType === 'VIDEO_CALL' ? 'Video Call' :
-                   selectedMeeting.meetingType === 'PHONE_CALL' ? 'Phone Call' : 'In Person'}
+                    selectedMeeting.meetingType === 'VIDEO_CALL' ? 'Video Call' :
+                      selectedMeeting.meetingType === 'PHONE_CALL' ? 'Phone Call' : 'In Person'}
                 </div>
               </div>
             </div>
@@ -1449,9 +1441,9 @@ function ImageBasedMeetingScheduler() {
               </div>
               <div style={{ maxHeight: '120px', overflowY: 'auto' }}>
                 {selectedMeeting.attendees?.map(attendee => (
-                  <div key={attendee.id} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div key={attendee.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
                     padding: '8px 0',
                     borderBottom: '1px solid #f5f5f5'
                   }}>
@@ -1472,9 +1464,9 @@ function ImageBasedMeetingScheduler() {
             </div>
 
             {selectedMeeting.meetLink && (
-              <div style={{ 
-                padding: '16px', 
-                backgroundColor: '#f6ffed', 
+              <div style={{
+                padding: '16px',
+                backgroundColor: '#f6ffed',
                 borderRadius: '8px',
                 border: '1px solid #91d5ff'
               }}>
@@ -1482,18 +1474,18 @@ function ImageBasedMeetingScheduler() {
                   <VideoCameraOutlined style={{ marginRight: '8px' }} />
                   <strong>Meeting Link:</strong>
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '12px',
                   backgroundColor: 'white',
                   borderRadius: '6px',
                   border: '1px solid #d9d9d9'
                 }}>
-                  <span style={{ 
-                    fontSize: '14px', 
-                    color: '#1890ff', 
+                  <span style={{
+                    fontSize: '14px',
+                    color: '#1890ff',
                     fontWeight: 500,
                     textDecoration: 'underline',
                     cursor: 'pointer',
@@ -1501,8 +1493,8 @@ function ImageBasedMeetingScheduler() {
                   }}>
                     {selectedMeeting.meetLink}
                   </span>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     size="small"
                     icon={<VideoCameraOutlined />}
                     onClick={() => window.open(selectedMeeting.meetLink, '_blank')}
@@ -1534,27 +1526,27 @@ function ImageBasedMeetingScheduler() {
       >
         <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
           {selectedDateMeetings.map(meeting => (
-            <div key={meeting.id} style={{ 
-              marginBottom: '12px', 
-              padding: '12px', 
-              border: '1px solid #f0f0f0', 
+            <div key={meeting.id} style={{
+              marginBottom: '12px',
+              padding: '12px',
+              border: '1px solid #f0f0f0',
               borderRadius: '6px',
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onClick={() => {
-              setSelectedMeeting(meeting);
-              setCalendarListModalVisible(false);
-              setCalendarMeetingModalVisible(true);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f6ffed';
-              e.currentTarget.style.borderColor = '#1890ff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white';
-              e.currentTarget.style.borderColor = '#f0f0f0';
-            }}
+              onClick={() => {
+                setSelectedMeeting(meeting);
+                setCalendarListModalVisible(false);
+                setCalendarMeetingModalVisible(true);
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f6ffed';
+                e.currentTarget.style.borderColor = '#1890ff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#f0f0f0';
+              }}
             >
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                 {getMeetingTypeIcon(meeting.meetingType)}
@@ -1581,9 +1573,9 @@ function ImageBasedMeetingScheduler() {
           description={
             <div>
               <div>{error}</div>
-              <Button 
-                type="link" 
-                size="small" 
+              <Button
+                type="link"
+                size="small"
                 onClick={() => {
                   setError(null);
                   fetchMeetings();
