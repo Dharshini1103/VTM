@@ -560,34 +560,44 @@ function ImageBasedMeetingScheduler() {
       title: 'Meeting Link',
       dataIndex: 'meetLink',
       key: 'meetLink',
-      width: 250,
-      render: (meetLink, record) => (
-        <div style={{ padding: '8px 0' }}>
-          {meetLink ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => window.open(meetLink, '_blank')}
-                icon={<VideoCameraOutlined />}
-                ghost
-              >
-                Join Meeting
-              </Button>
-              <Text
-                type="secondary"
-                copyable={{ text: meetLink }}
-                ellipsis={{ tooltip: meetLink }}
-                style={{ fontSize: '12px', maxWidth: '200px' }}
-              >
-                {meetLink}
-              </Text>
-            </div>
-          ) : (
-            <Tag color="default">No Link</Tag>
-          )}
-        </div>
-      ),
+      width: 200,
+      render: (meetLink, record) => {
+        console.log('Rendering meeting link for record:', record);
+        console.log('Meet link:', meetLink);
+        return (
+          <div style={{ padding: '8px 0' }}>
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => {
+                console.log('Join button clicked');
+                window.open(meetLink || '#', '_blank');
+              }}
+              icon={<VideoCameraOutlined />}
+              style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+            >
+              Join Meeting
+            </Button>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Status',
+      dataIndex: 'startDateTime',
+      key: 'status',
+      width: 120,
+      render: (dateTime, record) => {
+        const now = dayjs();
+        const meetingDate = dayjs(dateTime);
+        const isCompleted = meetingDate.isBefore(now, 'day');
+        
+        return (
+          <Tag color={isCompleted ? 'success' : 'warning'}>
+            {isCompleted ? 'Completed' : 'Yet to start'}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Actions',
