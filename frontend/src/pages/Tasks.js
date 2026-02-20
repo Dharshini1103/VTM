@@ -944,7 +944,13 @@ function Tasks() {
             size="large"
             onClick={voiceStatus === 'idle' ? startVoiceProcessing : stopVoiceProcessing}
             loading={voiceStatus === 'processing' || viLoading}
-            style={{ minWidth: '150px' }}
+            style={{ 
+              minWidth: '150px',
+              color: '#1890ff',
+              backgroundColor: 'transparent',
+              border: '1px solid #1890ff',
+              fontWeight: '600'
+            }}
           >
             {voiceStatus === 'idle' ? 'Voice Input' : voiceStatus === 'listening' ? 'Recording...' : 'Processing...'}
           </Button>
@@ -953,6 +959,12 @@ function Tasks() {
             icon={<PlusOutlined />}
             size="large"
             onClick={() => navigate('/tasks/new')}
+            style={{ 
+              color: '#1890ff',
+              backgroundColor: 'transparent',
+              border: '1px solid #1890ff',
+              fontWeight: '600'
+            }}
           >
             Create Task
           </Button>

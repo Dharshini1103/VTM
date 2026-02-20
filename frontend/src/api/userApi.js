@@ -26,7 +26,7 @@ const userApi = {
   },
 
   deactivateUser: (userId) => {
-    return axiosClient.patch(`/users/${userId}/deactivate`);
+    return axiosClient.delete(`/users/${userId}`);
   },
 
   deleteUserPermanently: (userId) => {

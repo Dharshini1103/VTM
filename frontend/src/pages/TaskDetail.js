@@ -161,7 +161,7 @@ function TaskDetail() {
   if (!task) return <Empty description="Task not found" />;
 
   return (
-    <div>
+    <div className="task-detail-container">
       <Button onClick={() => navigate('/tasks')} style={{ marginBottom: '20px' }}>
         ← Back to Tasks
       </Button>
@@ -184,6 +184,12 @@ function TaskDetail() {
                 icon={<CheckOutlined />}
                 onClick={handleComplete}
                 disabled={task.status === 'COMPLETED'}
+                style={{ 
+                  color: '#1890ff',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #1890ff',
+                  fontWeight: '600'
+                }}
                 >
                 Complete
                 </Button>
@@ -240,7 +246,12 @@ function TaskDetail() {
 
         <Col xs={24} md={8}>
           <Card title="Schedule Meeting" style={{ marginBottom: '20px' }}>
-            <Button block type="primary" onClick={() => navigate('/meetings?schedule=true')}>
+            <Button block type="primary" onClick={() => navigate('/meetings?schedule=true')} style={{ 
+              color: '#1890ff',
+              backgroundColor: 'transparent',
+              border: '1px solid #1890ff',
+              fontWeight: '600'
+            }}>
               Schedule Call/Meet
             </Button>
           </Card>

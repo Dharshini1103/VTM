@@ -41,14 +41,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Profile retrieved", null));
     }
 
-    @PutMapping("/update-password")
-    public ResponseEntity<ApiResponse<Void>> updatePassword(
-            @RequestBody UpdatePasswordRequest request,
-            @RequestHeader("Authorization") String token) {
-        userService.updatePassword(request.getOldPassword(), request.getNewPassword());
-        return ResponseEntity.ok(ApiResponse.success("Password updated successfully", null));
-    }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         userService.sendPasswordResetOtp(request.getGmailId());
@@ -68,17 +60,6 @@ public class AuthController {
     }
 
     // DTO classes for password operations
-    public static class UpdatePasswordRequest {
-        private String oldPassword;
-        private String newPassword;
-
-        // Getters and setters
-        public String getOldPassword() { return oldPassword; }
-        public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }
-        public String getNewPassword() { return newPassword; }
-        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
-    }
-
     public static class ForgotPasswordRequest {
         private String gmailId;
 

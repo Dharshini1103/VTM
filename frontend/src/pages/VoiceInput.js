@@ -365,6 +365,12 @@ function VoiceInput() {
                   icon={<AudioOutlined />}
                   onClick={handleStartRecording}
                   loading={loading}
+                  style={{ 
+                    color: '#1890ff',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #1890ff',
+                    fontWeight: '600'
+                  }}
                 >
                   Start Recording
                 </Button>

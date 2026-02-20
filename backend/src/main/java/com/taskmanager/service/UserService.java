@@ -393,27 +393,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    // Password management methods
-    public void updatePassword(String oldPassword, String newPassword) {
-        // Get current user from security context
-        String currentUserEmail = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(currentUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Verify old password
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
-        }
-
-        // Update password
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-    }
-
     public void sendPasswordResetOtp(String gmailId) {
-        userRepository.findByEmail(gmailId)
-                .orElseThrow(() -> new RuntimeException("User not found with this Gmail ID"));
-
         // Generate 6-digit OTP
         String otp = String.format("%06d", new Random().nextInt(1000000));
         
@@ -425,7 +405,6 @@ public class UserService {
         logger.info("OTP for password reset for {}: {}", gmailId, otp);
         logger.info("In production, this OTP should be sent to the user's email address");
         
-        // TODO: Implement email sending service
         // emailService.sendOtpEmail(user.getEmail(), otp);
     }
 

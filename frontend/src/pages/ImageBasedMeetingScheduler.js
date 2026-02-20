@@ -370,6 +370,30 @@ function ImageBasedMeetingScheduler() {
     // You can add more profile viewing logic here
   };
 
+  const handleDeactivateUser = async (user) => {
+    try {
+      const response = await userApi.deactivateUser(user.id);
+      setSuccess(`User ${user.firstName} ${user.lastName} deactivated successfully`);
+      fetchUsers(); // Refresh the users list
+    } catch (err) {
+      console.error('Deactivate user error:', err);
+      setError('Failed to deactivate user');
+    }
+  };
+
+  const canDeactivateUser = (targetUser) => {
+    // Admin can deactivate Users and Managers, but not Super Admins
+    if (userRole === 'ADMIN') {
+      return targetUser.role !== 'SUPER_ADMIN';
+    }
+    // Super Admin can deactivate anyone except themselves
+    if (userRole === 'SUPER_ADMIN') {
+      return targetUser.id !== currentUser?.id;
+    }
+    // Other roles cannot deactivate anyone
+    return false;
+  };
+
   const handleScheduleCallFromTask = (taskTitle) => {
     // Navigate to meetings page with pre-filled title and open modal
     navigate(`/meetings?taskTitle=${encodeURIComponent(taskTitle)}&openModal=true`);
@@ -502,7 +526,7 @@ function ImageBasedMeetingScheduler() {
       title: 'Meeting',
       dataIndex: 'title',
       key: 'title',
-      width: 350,
+      width: 400,
       render: (text, record) => (
         <div style={{ padding: '8px 0' }}>
           <div style={{ fontWeight: 600, marginBottom: 4, fontSize: '15px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
@@ -519,7 +543,7 @@ function ImageBasedMeetingScheduler() {
       title: 'Date & Time',
       dataIndex: 'startDateTime',
       key: 'startDateTime',
-      width: 200,
+      width: 250,
       render: (dateTime, record) => (
         <div style={{ padding: '8px 0' }}>
           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
@@ -538,7 +562,7 @@ function ImageBasedMeetingScheduler() {
       title: 'Attendees',
       dataIndex: 'attendees',
       key: 'attendees',
-      width: 180,
+      width: 200,
       render: (attendees) => (
         <div style={{ padding: '8px 0' }}>
           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
@@ -574,9 +598,9 @@ function ImageBasedMeetingScheduler() {
                 window.open(meetLink || '#', '_blank');
               }}
               icon={<VideoCameraOutlined />}
-              style={{ backgroundColor: '#1890ff', borderColor: '#1890ff' }}
+              style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
             >
-              Join Meeting
+              Join Now
             </Button>
           </div>
         );
@@ -599,30 +623,66 @@ function ImageBasedMeetingScheduler() {
         );
       },
     },
+  ];
+
+  // Dashboard table columns (only Meeting, Date & Time, Attendees)
+  const dashboardColumns = [
     {
-      title: 'Actions',
-      key: 'actions',
-      width: 100,
-      render: (_, record) => (
-        <Space size="small">
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEditMeeting(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Cancel">
-            <Button
-              type="text"
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => handleCancelMeeting(record)}
-            />
-          </Tooltip>
-        </Space>
+      title: 'Meeting',
+      dataIndex: 'title',
+      key: 'title',
+      width: 400,
+      render: (text, record) => (
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ fontWeight: 600, marginBottom: 4, fontSize: '15px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
+            {getMeetingTypeIcon(record.meetingType)}
+            <span style={{ marginLeft: 12 }}>{text}</span>
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            {record.description || 'No description provided'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Date & Time',
+      dataIndex: 'startDateTime',
+      key: 'startDateTime',
+      width: 250,
+      render: (dateTime, record) => (
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+            {dayjs(dateTime).format('MMM DD, YYYY')}
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <ClockCircleOutlined style={{ fontSize: '12px' }} />
+              {dayjs(dateTime).format('hh:mm A')} - {dayjs(record.endDateTime).format('hh:mm A')}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Attendees',
+      dataIndex: 'attendees',
+      key: 'attendees',
+      width: 200,
+      render: (attendees) => (
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>
+            {attendees?.length || 0} attendees
+          </div>
+          <div style={{ margin: '6px 0 0 0' }}>
+            <Avatar.Group maxCount={3} size="small">
+              {attendees?.map(a => (
+                <Tooltip title={`${a.firstName} ${a.lastName}`} key={a.id}>
+                  <Avatar style={{ backgroundColor: '#3b82f6' }}>{a.firstName?.charAt(0)}</Avatar>
+                </Tooltip>
+              ))}
+            </Avatar.Group>
+          </div>
+        </div>
       ),
     },
   ];
@@ -705,7 +765,7 @@ function ImageBasedMeetingScheduler() {
           {/* Header */}
           <div className="header">
             <div className="header-left">
-              <h1 className="page-title">
+              <h1 className="page-title" style={{ color: '#000000' }}>
                 {activeTab === 'dashboard' && 'Dashboard'}
                 {activeTab === 'meetings' && 'My Meetings'}
                 {activeTab === 'team' && 'Team Directory'}
@@ -778,7 +838,7 @@ function ImageBasedMeetingScheduler() {
                   </div>
                   <Table
                     dataSource={filteredMeetings.slice(0, 5)}
-                    columns={meetingColumns}
+                    columns={dashboardColumns}
                     rowKey="id"
                     pagination={false}
                     size="middle"
@@ -823,6 +883,7 @@ function ImageBasedMeetingScheduler() {
                           icon={<PlusOutlined />}
                           onClick={() => setIsModalVisible(true)}
                           size="large"
+                          style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
                         >
                           Schedule Meeting
                         </Button>
@@ -917,17 +978,15 @@ function ImageBasedMeetingScheduler() {
                         key: 'actions',
                         render: (_, record) => (
                           <Space size="small">
-                            {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                              <Tooltip title="Schedule Meeting">
+                            {canDeactivateUser(record) && (
+                              <Tooltip title="Deactivate User">
                                 <Button
-                                  type="primary"
+                                  type="default"
+                                  danger
                                   size="small"
-                                  icon={<CalendarOutlined />}
-                                  onClick={() => handleScheduleWithMember(record)}
-                                  ghost
-                                >
-                                  Schedule
-                                </Button>
+                                  icon={<DeleteOutlined />}
+                                  onClick={() => handleDeactivateUser(record)}
+                                />
                               </Tooltip>
                             )}
                             <Tooltip title="View Profile">
@@ -1171,6 +1230,7 @@ function ImageBasedMeetingScheduler() {
                 htmlType="submit"
                 loading={loading}
                 size="large"
+                style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
               >
                 Schedule Meeting
               </Button>
@@ -1360,6 +1420,7 @@ function ImageBasedMeetingScheduler() {
                 htmlType="submit"
                 loading={loading}
                 size="large"
+                style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
               >
                 Update Meeting
               </Button>

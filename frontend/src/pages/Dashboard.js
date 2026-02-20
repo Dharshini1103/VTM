@@ -164,24 +164,6 @@ function Dashboard() {
                       padding: 'var(--space-4) 0',
                       borderBottom: '1px solid var(--gray-200)',
                     }}
-                    actions={[
-                      <Button
-                        key="update"
-                        type="primary"
-                        size="small"
-                        icon={<EditOutlined />}
-                        onClick={() => navigate(`/tasks/${task.id}/edit`)}
-                        title="Update Task"
-                      />,
-                      <Button
-                        key="delete"
-                        danger
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleDelete(task.id)}
-                        title="Delete Task"
-                      />,
-                    ]}
                   >
                     <List.Item.Meta
                       avatar={getStatusIcon(task.status)}

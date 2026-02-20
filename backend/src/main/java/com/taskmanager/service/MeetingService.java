@@ -2,7 +2,6 @@ package com.taskmanager.service;
 
 import com.taskmanager.dto.MeetingDTO;
 import com.taskmanager.dto.request.MeetingRequest;
-import com.taskmanager.service.ZoomMeetingService;
 import com.taskmanager.entity.Meeting;
 import com.taskmanager.entity.User;
 import com.taskmanager.repository.MeetingRepository;
@@ -42,9 +41,6 @@ public class MeetingService {
 
     public List<MeetingDTO> getAllMeetingsWithParticipantInfo(Long currentUserId) {
         List<Meeting> meetings = meetingRepository.findAll();
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
         return meetings.stream()
                 .map(meeting -> {
                     MeetingDTO dto = MeetingDTO.fromEntity(meeting);
@@ -61,9 +57,6 @@ public class MeetingService {
     public boolean canUserJoinMeeting(Long meetingId, Long userId) {
         Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new RuntimeException("Meeting not found"));
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
         
         // User can join if they are the creator or an attendee
         boolean isCreator = meeting.getCreatedBy().getId().equals(userId);

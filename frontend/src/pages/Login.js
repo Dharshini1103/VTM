@@ -167,7 +167,12 @@ function Login() {
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" block size="large">
+                  <Button type="primary" htmlType="submit" block size="large" style={{ 
+                    color: '#1890ff',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #1890ff',
+                    fontWeight: '600'
+                  }}>
                     Login
                   </Button>
                 </Form.Item>

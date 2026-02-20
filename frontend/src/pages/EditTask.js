@@ -359,7 +359,12 @@ function EditTask() {
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" block size="large" loading={submitting}>
+                  <Button type="primary" htmlType="submit" block size="large" loading={submitting} style={{ 
+                    color: '#1890ff',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #1890ff',
+                    fontWeight: '600'
+                  }}>
                     Update Task
                   </Button>
                 </Form.Item>
