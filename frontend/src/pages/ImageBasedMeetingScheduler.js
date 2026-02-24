@@ -572,7 +572,19 @@ function ImageBasedMeetingScheduler() {
             <Avatar.Group maxCount={3} size="small">
               {attendees?.map(a => (
                 <Tooltip title={`${a.firstName} ${a.lastName}`} key={a.id}>
-                  <Avatar style={{ backgroundColor: '#3b82f6' }}>{a.firstName?.charAt(0)}</Avatar>
+                  <Avatar 
+                    style={{ 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {a.firstName?.charAt(0)?.toUpperCase()}
+                  </Avatar>
                 </Tooltip>
               ))}
             </Avatar.Group>
@@ -677,7 +689,19 @@ function ImageBasedMeetingScheduler() {
             <Avatar.Group maxCount={3} size="small">
               {attendees?.map(a => (
                 <Tooltip title={`${a.firstName} ${a.lastName}`} key={a.id}>
-                  <Avatar style={{ backgroundColor: '#3b82f6' }}>{a.firstName?.charAt(0)}</Avatar>
+                  <Avatar 
+                    style={{ 
+                      backgroundColor: '#3b82f6', 
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {a.firstName?.charAt(0)?.toUpperCase()}
+                  </Avatar>
                 </Tooltip>
               ))}
             </Avatar.Group>
@@ -721,12 +745,6 @@ function ImageBasedMeetingScheduler() {
               </div>
               <span className="logo-text">MeetHub</span>
             </div>
-            <button
-              className="collapse-btn"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            >
-              {sidebarCollapsed ? <MenuOutlined /> : <LeftOutlined />}
-            </button>
           </div>
 
           <div className="sidebar-menu">
@@ -780,119 +798,285 @@ function ImageBasedMeetingScheduler() {
 
           <div className="content-area">
             {activeTab === 'dashboard' && (
-              <div className="dashboard-content">
-                <div className="stats-row">
-                  <div className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon">
-                        <CalendarOutlined style={{ color: '#3b82f6' }} />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.total}</div>
-                        <div className="stat-label">Total Meetings</div>
-                      </div>
+              <div style={{ padding: '32px' }}>
+                {/* Simple Dashboard Header */}
+                <div style={{ 
+                  textAlign: 'center',
+                  marginBottom: '40px'
+                }}>
+                  <Title level={2} style={{ 
+                    margin: 0, 
+                    color: '#1f2937', 
+                    fontSize: '32px',
+                    fontWeight: '700'
+                  }}>
+                    Dashboard
+                  </Title>
+                  <Text style={{ 
+                    fontSize: '16px', 
+                    color: '#6b7280',
+                    marginTop: '8px',
+                    display: 'block'
+                  }}>
+                    Overview of your meetings and activities
+                  </Text>
+                </div>
+
+                {/* Simple Stats Grid */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '24px',
+                  marginBottom: '40px'
+                }}>
+                  {/* Total Meetings Card */}
+                  <div style={{
+                    background: 'white',
+                    padding: '24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e5e7eb',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: '36px',
+                      fontWeight: '700',
+                      color: '#3b82f6',
+                      marginBottom: '8px'
+                    }}>
+                      {stats.total}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>
+                      Total Meetings
                     </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.1)' }}>
-                        <CheckCircleOutlined style={{ color: '#10b981' }} />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.completed}</div>
-                        <div className="stat-label">Completed</div>
-                      </div>
+                  {/* Completed Card */}
+                  <div style={{
+                    background: 'white',
+                    padding: '24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e5e7eb',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: '36px',
+                      fontWeight: '700',
+                      color: '#10b981',
+                      marginBottom: '8px'
+                    }}>
+                      {stats.completed}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>
+                      Completed
                     </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
-                        <ClockCircleOutlined style={{ color: '#f59e0b' }} />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.upcoming}</div>
-                        <div className="stat-label">Upcoming</div>
-                      </div>
+                  {/* Upcoming Card */}
+                  <div style={{
+                    background: 'white',
+                    padding: '24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e5e7eb',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: '36px',
+                      fontWeight: '700',
+                      color: '#f59e0b',
+                      marginBottom: '8px'
+                    }}>
+                      {stats.upcoming}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>
+                      Upcoming
                     </div>
                   </div>
 
-                  <div className="stat-card">
-                    <div className="stat-content">
-                      <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
-                        <CloseCircleOutlined style={{ color: '#ef4444' }} />
-                      </div>
-                      <div className="stat-info">
-                        <div className="stat-number">{stats.cancelled}</div>
-                        <div className="stat-label">Cancelled</div>
-                      </div>
+                  {/* Cancelled Card */}
+                  <div style={{
+                    background: 'white',
+                    padding: '24px',
+                    borderRadius: '12px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: '1px solid #e5e7eb',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{
+                      fontSize: '36px',
+                      fontWeight: '700',
+                      color: '#ef4444',
+                      marginBottom: '8px'
+                    }}>
+                      {stats.cancelled}
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>
+                      Cancelled
                     </div>
                   </div>
                 </div>
 
-                <div className="recent-meetings-card">
-                  <div className="meetings-header" style={{ marginBottom: '16px', padding: '0 0 16px 0', borderBottom: '1px solid #e2e8f0', background: 'transparent', boxShadow: 'none' }}>
-                    <Title level={4} style={{ margin: 0 }}>Recent Meetings</Title>
-                    <Button type="link" onClick={() => setActiveTab('meetings')}>View All</Button>
+                {/* Recent Meetings Section */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  border: '1px solid #e5e7eb',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: '24px',
+                    borderBottom: '1px solid #f3f4f6',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Title level={4} style={{ 
+                      margin: 0, 
+                      color: '#1f2937',
+                      fontSize: '18px'
+                    }}>
+                      Recent Meetings
+                    </Title>
+                    <Button 
+                      type="link" 
+                      onClick={() => setActiveTab('meetings')}
+                      style={{ color: '#3b82f6' }}
+                    >
+                      View All
+                    </Button>
                   </div>
-                  <Table
-                    dataSource={filteredMeetings.slice(0, 5)}
-                    columns={dashboardColumns}
-                    rowKey="id"
-                    pagination={false}
-                    size="middle"
-                    scroll={{ x: 1000 }}
-                  />
+                  <div style={{ padding: '0 24px 24px 24px' }}>
+                    <Table
+                      dataSource={filteredMeetings.slice(0, 5)}
+                      columns={dashboardColumns}
+                      rowKey="id"
+                      pagination={false}
+                      size="middle"
+                      scroll={{ x: 1000 }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'meetings' && (
-              <div className="meetings-content">
-                <div className="meetings-header">
-                  <div className="meetings-title">
-                    <Title level={4} style={{ margin: 0 }}>All Meetings</Title>
-                    <Text type="secondary">Manage your upcoming and past meetings</Text>
-                  </div>
-                  <div className="meetings-actions">
-                    <Space>
-                      <Select
-                        value={filterType}
-                        onChange={setFilterType}
-                        style={{ width: 180 }}
-                        placeholder="Filter by Type"
-                      >
-                        <Option value="all">All Types</Option>
-                        <Option value="ZOOM_MEET">
-                          <Space><VideoCameraFilled /> Zoom Meeting</Space>
-                        </Option>
-                        <Option value="VIDEO_CALL">
-                          <Space><VideoCameraOutlined /> Video Call</Space>
-                        </Option>
-                        <Option value="PHONE_CALL">
-                          <Space><PhoneOutlined /> Phone Call</Space>
-                        </Option>
-                        <Option value="IN_PERSON">
-                          <Space><TeamOutlined /> In Person</Space>
-                        </Option>
-                      </Select>
-                      {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-                        <Button
-                          type="primary"
-                          icon={<PlusOutlined />}
-                          onClick={() => setIsModalVisible(true)}
-                          size="large"
-                          style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
-                        >
-                          Schedule Meeting
-                        </Button>
-                      )}
-                    </Space>
-                  </div>
+              <div className="meetings-content" style={{ padding: '32px' }}>
+                {/* Page Header */}
+                <div style={{ 
+                  marginBottom: '32px',
+                  textAlign: 'center'
+                }}>
+                  <Title level={2} style={{ 
+                    margin: 0, 
+                    color: '#1f2937', 
+                    fontSize: '28px',
+                    fontWeight: '700'
+                  }}>
+                    All Meetings
+                  </Title>
+                  <Text style={{ 
+                    fontSize: '16px', 
+                    color: '#6b7280',
+                    marginTop: '8px',
+                    display: 'block'
+                  }}>
+                    Manage your upcoming and past meetings
+                  </Text>
                 </div>
 
-                <div className="ant-table-wrapper">
+                {/* Filter and Actions */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '24px',
+                  gap: '16px'
+                }}>
+                  <div>
+                    <Text style={{ 
+                      fontSize: '14px', 
+                      color: '#374151',
+                      fontWeight: '500',
+                      marginRight: '12px'
+                    }}>
+                      Filter by Type:
+                    </Text>
+                    <Select
+                      value={filterType}
+                      onChange={setFilterType}
+                      style={{ width: 200, height: '40px' }}
+                      placeholder="Select Type"
+                      size="large"
+                    >
+                      <Option value="all">All Types</Option>
+                      <Option value="ZOOM_MEET">
+                        <Space><VideoCameraFilled /> Zoom Meeting</Space>
+                      </Option>
+                      <Option value="VIDEO_CALL">
+                        <Space><VideoCameraOutlined /> Video Call</Space>
+                      </Option>
+                      <Option value="PHONE_CALL">
+                        <Space><PhoneOutlined /> Phone Call</Space>
+                      </Option>
+                      <Option value="IN_PERSON">
+                        <Space><TeamOutlined /> In Person</Space>
+                      </Option>
+                    </Select>
+                  </div>
+                  
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsModalVisible(true)}
+                    size="large"
+                    className="schedule-meeting-btn"
+                    style={{ 
+                      height: '44px',
+                      background: '#3b82f6 !important',
+                      borderColor: '#3b82f6 !important',
+                      color: '#ffffff !important',
+                      fontWeight: '600 !important',
+                      fontSize: '14px !important',
+                      paddingLeft: '20px',
+                      paddingRight: '20px',
+                      display: 'inline-flex !important',
+                      alignItems: 'center !important',
+                      justifyContent: 'center !important',
+                      visibility: 'visible !important',
+                      opacity: '1 !important'
+                    }}
+                  >
+                    Schedule Meeting
+                  </Button>
+                </div>
+
+                {/* Meetings Table */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid #e5e7eb',
+                  overflow: 'hidden'
+                }}>
                   <Table
                     dataSource={filteredMeetings}
                     columns={meetingColumns}
@@ -903,9 +1087,11 @@ function ImageBasedMeetingScheduler() {
                       showSizeChanger: false,
                       showTotal: (total) => `Showing ${total} meetings`,
                       size: 'default',
+                      style: { marginRight: '16px' }
                     }}
                     scroll={{ x: 1150 }}
                     size="middle"
+                    style={{ background: 'white' }}
                   />
                 </div>
               </div>
@@ -1230,7 +1416,12 @@ function ImageBasedMeetingScheduler() {
                 htmlType="submit"
                 loading={loading}
                 size="large"
-                style={{ color: '#1890ff', backgroundColor: 'transparent', border: '1px solid #1890ff' }}
+                style={{ 
+                  background: '#3b82f6',
+                  borderColor: '#3b82f6',
+                  color: 'white',
+                  fontWeight: '600'
+                }}
               >
                 Schedule Meeting
               </Button>

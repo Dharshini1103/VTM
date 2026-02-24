@@ -45,7 +45,7 @@ function Login() {
         password: values.password,
         rememberMe: rememberMeChecked,
       }));
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       let errorMessage = 'Login failed';
       

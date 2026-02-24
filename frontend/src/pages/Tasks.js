@@ -49,12 +49,32 @@ function Tasks() {
   const fetchTasks = async () => {
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      const token = storageManager.getAuthToken();
+      if (!token) {
+        console.log('No authentication token found');
+        message.error('Please login to access tasks');
+        navigate('/login');
+        return;
+      }
+      
+      console.log('Fetching tasks with token:', token ? 'Token exists' : 'No token');
       const response = await taskApi.getAllTasks();
       const tasksArray = response?.data?.data || [];
+      console.log('Tasks fetched successfully:', tasksArray.length);
       setTasks(tasksArray);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      message.error('Failed to load tasks');
+      
+      if (error.response?.status === 401) {
+        console.log('Authentication failed - redirecting to login');
+        message.error('Session expired. Please login again.');
+        storageManager.clearAuthData();
+        navigate('/login');
+      } else {
+        message.error('Failed to load tasks: ' + (error.response?.data?.message || error.message));
+      }
     } finally {
       setLoading(false);
     }

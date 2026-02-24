@@ -69,6 +69,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/tasks").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "USER")
                 .requestMatchers(HttpMethod.PUT, "/tasks/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/tasks/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                .requestMatchers(HttpMethod.GET, "/tasks").authenticated() // Allow authenticated users to get all tasks
                 .requestMatchers(HttpMethod.GET, "/tasks/**").authenticated()
                 
                 // Manager team endpoints

@@ -31,7 +31,7 @@ function Navigation() {
 
   return (
     <Header className="header-content">
-      <div className="logo" onClick={() => navigate('/')}>
+      <div className="logo" onClick={() => navigate('/dashboard')}>
         <span className="logo-icon">📋</span>
         Task Manager
       </div>
@@ -42,7 +42,7 @@ function Navigation() {
         defaultSelectedKeys={['dashboard']}
         className="custom-menu"
       >
-        <Menu.Item key="dashboard" onClick={() => navigate('/')}>
+        <Menu.Item key="dashboard" onClick={() => navigate('/dashboard')}>
           Dashboard
         </Menu.Item>
         <Menu.Item key="tasks" onClick={() => navigate('/tasks')}>

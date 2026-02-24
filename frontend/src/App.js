@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from 'antd';
 import { useSelector } from 'react-redux';
 
@@ -15,28 +15,36 @@ import MeetingScheduler from './pages/ImageBasedMeetingScheduler';
 import TeamMembers from './pages/TeamMembers';
 import Profile from './pages/Profile';
 import ScheduleMeeting from './pages/ScheduleMeeting';
+import LandingPage from './pages/LandingPage';
 
 const { Content } = Layout;
 
 function App() {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const location = useLocation();
 
   const PrivateRoute = ({ children }) => {
     return isAuthenticated ? children : <Navigate to="/login" />;
   };
 
+  // Determine if navigation should be shown
+  const showNavigation = isAuthenticated && 
+    !location.pathname.includes('/login') && 
+    !location.pathname.includes('/register');
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {isAuthenticated && <Navigation />}
-      <Content style={{ padding: isAuthenticated ? '24px' : '0' }}>
+      {showNavigation && <Navigation />}
+      <Content style={{ padding: showNavigation ? '24px' : '0' }}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
           {/* Private Routes */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <PrivateRoute>
                 <Dashboard />

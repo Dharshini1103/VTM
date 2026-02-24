@@ -146,7 +146,27 @@ function Register() {
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" block size="large">
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    block 
+                    size="large"
+                    className="register-submit-btn"
+                    style={{
+                      background: '#3b82f6 !important',
+                      borderColor: '#3b82f6 !important',
+                      color: '#ffffff !important',
+                      fontWeight: '700 !important',
+                      height: '48px !important',
+                      fontSize: '16px !important',
+                      borderRadius: '8px !important',
+                      display: 'inline-flex !important',
+                      alignItems: 'center !important',
+                      justifyContent: 'center !important',
+                      opacity: '1 !important',
+                      visibility: 'visible !important'
+                    }}
+                  >
                     Register
                   </Button>
                 </Form.Item>

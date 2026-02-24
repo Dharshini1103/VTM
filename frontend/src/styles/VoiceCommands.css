@@ -152,21 +152,6 @@
   border-radius: 8px;
 }
 
-.task-table-container .ant-table-thead > tr > th {
-  background-color: #fafafa;
-  font-weight: 600;
-  color: #262626;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.task-table-container .ant-table-tbody > tr {
-  transition: all 0.3s ease;
-}
-
-.task-table-container .ant-table-tbody > tr:hover {
-  background-color: #f6f8fb;
-}
-
 /* Priority & Status Badge Styles */
 .priority-badge {
   font-weight: 600;

@@ -83,21 +83,6 @@
   overflow: hidden;
 }
 
-.team-table .ant-table-thead > tr > th {
-  background: #fafafa;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.team-table .ant-table-tbody > tr > td {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.team-table .ant-table-tbody > tr:hover > td {
-  background: #f5f7fa;
-}
-
 .team-table .ant-avatar {
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -106,21 +91,6 @@
 .meetings-table {
   border-radius: 8px;
   overflow: hidden;
-}
-
-.meetings-table .ant-table-thead > tr > th {
-  background: #fafafa;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.meetings-table .ant-table-tbody > tr > td {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.meetings-table .ant-table-tbody > tr:hover > td {
-  background: #f5f7fa;
 }
 
 .meetings-table .ant-avatar {

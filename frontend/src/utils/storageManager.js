@@ -85,6 +85,12 @@ const storageManager = {
     localStorage.removeItem(STORAGE_KEYS.USER);
   },
 
+  // Clear auth data (alias for clearSession)
+  clearAuthData: () => {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
+  },
+
   // Check if user has saved credentials
   hasSavedCredentials: () => {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) || 'false') &&

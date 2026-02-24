@@ -225,14 +225,9 @@ function TeamMembers() {
       key: 'contact',
       render: (_, record) => (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-            <MailOutlined style={{ marginRight: '8px', color: '#666' }} />
-            <span>{record.email}</span>
-          </div>
-          {record.gmailId && (
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              Gmail: {record.gmailId}
-            </div>
+          {record.email}
+          {record.gmailId && record.gmailId !== record.email && (
+            <div>{record.gmailId}</div>
           )}
         </div>
       ),
