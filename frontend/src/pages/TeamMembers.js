@@ -538,7 +538,7 @@ const userCount = members.filter(m => m.role === 'USER').length;
                    selectedMember.email === currentUser.email ||
                    (selectedMember.gmailId && selectedMember.gmailId === currentUser.email))
                   ? "Update Profile" : "Update User"
-                )}
+                ) || "Update"}
               </Button>
               <Button onClick={() => setUpdateModalVisible(false)}>
                 Cancel

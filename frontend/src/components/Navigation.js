@@ -14,7 +14,7 @@ function Navigation() {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate('/');
   };
 
   const userMenu = (
